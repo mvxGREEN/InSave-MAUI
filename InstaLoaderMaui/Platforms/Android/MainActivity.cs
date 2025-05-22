@@ -20,9 +20,15 @@ using Firebase.Analytics;
 namespace InstaLoaderMaui;
 
 [Activity(Theme = "@style/Maui.SplashTheme", MainLauncher = true, LaunchMode = LaunchMode.SingleTop, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize | ConfigChanges.Density)]
-public class MainActivity : MauiAppCompatActivity
+public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
 {
     private static string Tag = nameof(MainActivity);
+
+    public BillingClient MBillingClient;
+    public BillingFlowParams MBillingFlowParams;
+    public IConsentInformation consentInformation;
+    private IConsentForm googleUMPConsentForm = null;
+    private IConsentInformation googleUMPConsentInformation = null;
 
     public static MainActivity ActivityCurrent { get; set; }
     public MainActivity()
@@ -50,7 +56,7 @@ public class MainActivity : MauiAppCompatActivity
 
         AskPermissions();
 
-        //LoadBillingClient();
+        LoadBillingClient();
     }
 
     protected override void OnResume()
@@ -100,10 +106,17 @@ public class MainActivity : MauiAppCompatActivity
     private void AskPermissions()
     {
         if ((int)Build.VERSION.SdkInt >= 33
-            && ContextCompat.CheckSelfPermission(this, Android.Manifest.Permission.ReadMediaAudio) != Permission.Granted)
+            && ContextCompat.CheckSelfPermission(this, Android.Manifest.Permission.ReadMediaVideo) != Permission.Granted)
         {
             ActivityCompat.RequestPermissions(
-                MainActivity.ActivityCurrent, new string[] { Android.Manifest.Permission.ReadMediaAudio }, 101);
+                MainActivity.ActivityCurrent, new string[] { Android.Manifest.Permission.ReadMediaVideo }, 101);
+
+        }
+        if ((int)Build.VERSION.SdkInt >= 33
+            && ContextCompat.CheckSelfPermission(this, Android.Manifest.Permission.ReadMediaImages) != Permission.Granted)
+        {
+            ActivityCompat.RequestPermissions(
+                MainActivity.ActivityCurrent, new string[] { Android.Manifest.Permission.ReadMediaImages }, 101);
 
         }
         else if ((int)Build.VERSION.SdkInt < 33
@@ -112,5 +125,545 @@ public class MainActivity : MauiAppCompatActivity
             ActivityCompat.RequestPermissions(
             MainActivity.ActivityCurrent, new string[] { Android.Manifest.Permission.ReadExternalStorage, Android.Manifest.Permission.WriteExternalStorage }, 101);
         }
+    }
+
+    // ADMOB
+    public void LoadAdmob()
+    {
+        // log event
+        // TODO move to after gold check
+        try
+        {
+            Bundle bundle = new Bundle();
+            bundle.PutString("admob", "load");
+            bundle.PutString("app_name", "instaloader");
+            FirebaseAnalytics.GetInstance((MainActivity)Platform.CurrentActivity).LogEvent("admob_load", bundle);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"{Tag} failed to log event: {e.Message}");
+        }
+
+        if (Preferences.Default.Get("IS_GOLD", false))
+        {
+            Console.WriteLine($"{Tag} Skipping LoadAdmob");
+            return;
+        }
+        Console.WriteLine($"{Tag} LoadAdmob");
+
+        CrossMauiMTAdmob.Current.Init(this, AdmobIdApp);
+        CrossMauiMTAdmob.Current.UserPersonalizedAds = true;
+        SetGDPR();
+        LoadBannerAd();
+        if (!CrossMauiMTAdmob.Current.IsInterstitialLoaded())
+        {
+            CrossMauiMTAdmob.Current.LoadInterstitial(MainPage.admobIdInter);
+        }
+    }
+
+    public void LoadBannerAd()
+    {
+        Console.WriteLine($"{Tag} LoadBannerAd");
+        ((MTAdView)((MainPage)Shell.Current.CurrentPage).FindByName("banner_ad"))
+            .LoadAd();
+
+    }
+
+    private void SetGDPR()
+    {
+        Console.WriteLine("starting consent management flow");
+        try
+        {
+#if DEBUG
+            Log.Info(Tag, "running DEBUG branch");
+            var debugSettings = new ConsentDebugSettings.Builder(MainActivity.ActivityCurrent)
+            .SetDebugGeography(ConsentDebugSettings
+                    .DebugGeography
+                    .DebugGeographyEea)
+            //.AddTestDeviceHashedId("see logcat...")
+            .AddTestDeviceHashedId(Android.Provider.Settings.Secure.GetString(((MainActivity)Platform.CurrentActivity).ContentResolver,
+                                    Android.Provider.Settings.Secure.AndroidId))
+            .Build();
+#endif
+
+            var requestParameters = new ConsentRequestParameters
+                .Builder()
+                .SetTagForUnderAgeOfConsent(false)
+#if DEBUG
+        .SetConsentDebugSettings(debugSettings)
+#endif
+                .Build();
+            MainActivity ma = (MainActivity)Platform.CurrentActivity;
+            consentInformation = UserMessagingPlatform.GetConsentInformation(ma);
+
+            consentInformation.RequestConsentInfoUpdate(
+                ma,
+                requestParameters,
+                new GoogleUMPConsentUpdateSuccessListener(
+                    () =>
+                    {
+                        // The consent information state was updated.
+                        // You are now ready to check if a form is available.
+                        if (consentInformation.IsConsentFormAvailable)
+                        {
+                            Xamarin.Google.UserMesssagingPlatform.UserMessagingPlatform.LoadConsentForm(
+                                MainActivity.ActivityCurrent,
+                                new GoogleUMPFormLoadSuccessListener((Xamarin.Google.UserMesssagingPlatform.IConsentForm f) =>
+                                {
+                                    googleUMPConsentForm = f;
+                                    googleUMPConsentInformation = consentInformation;
+                                    Console.WriteLine("DEBUG: MainActivity.OnCreate: Consent management flow: LoadConsentForm has loaded a form, which will be shown if necessary, once the ViewModel is ready.");
+                                    DisplayAdvertisingConsentFormIfNecessary();
+                                }),
+                                new GoogleUMPFormLoadFailureListener((Xamarin.Google.UserMesssagingPlatform.FormError e) =>
+                                {
+                                    // Handle the error.
+                                    Console.WriteLine("ERROR: MainActivity.OnCreate: Consent management flow: failed in LoadConsentForm with error " + e.Message);
+                                }));
+                        }
+                        else
+                        {
+                            Console.WriteLine("DEBUG: MainActivity.OnCreate: Consent management flow: RequestConsentInfoUpdate succeeded but no consent form was available.");
+                        }
+                    }),
+                new GoogleUMPConsentUpdateFailureListener(
+                    (Xamarin.Google.UserMesssagingPlatform.FormError e) =>
+                    {
+                        // Handle the error.
+                        Console.WriteLine("ERROR: MainActivity.OnCreate: Consent management flow: failed in RequestConsentInfoUpdate with error " + e.Message);
+                    })
+                );
+        }
+        catch (System.Exception ex)
+        {
+            Console.WriteLine("ERROR: MainActivity.OnCreate: Exception thrown during consent management flow: ", ex);
+        }
+    }
+
+    public interface IAdmobInterstitial
+    {
+        void Show(string adUnit);
+
+        void Give();
+    }
+
+    public class InterstitialAdListener : AdListener
+    {
+        readonly InterstitialAd _ad;
+
+        public InterstitialAdListener(InterstitialAd ad)
+        {
+            _ad = ad;
+        }
+
+        public override void OnAdLoaded()
+        {
+            base.OnAdLoaded();
+
+            //if (_ad.IsLoaded)
+            //    _ad.Show();
+        }
+    }
+
+    public void DisplayAdvertisingConsentFormIfNecessary()
+    {
+        try
+        {
+            if (googleUMPConsentForm != null && googleUMPConsentInformation != null)
+            {
+                /* ConsentStatus:
+                    Unknown = 0,
+                    NotRequired = 1,
+                    Required = 2,
+                    Obtained = 3
+                */
+                if (googleUMPConsentInformation.ConsentStatus == 2)
+                {
+                    Console.WriteLine("DEBUG: MainActivity.DisplayAdvertisingConsentFormIfNecessary: Consent form is being displayed.");
+                    DisplayAdvertisingConsentForm();
+                }
+                else
+                {
+                    Console.WriteLine("DEBUG: MainActivity.DisplayAdvertisingConsentFormIfNecessary: Consent form is not being displayed because consent status is " + googleUMPConsentInformation.ConsentStatus.ToString());
+                }
+            }
+            else
+            {
+                Console.WriteLine("ERROR: MainActivity.DisplayAdvertisingConsentFormIfNecessary: consent form or consent information missing.");
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Console.WriteLine("ERROR: MainActivity.DisplayAdvertisingConsentFormIfNecessary: Exception thrown: ", ex);
+        }
+    }
+
+    public void DisplayAdvertisingConsentForm()
+    {
+        try
+        {
+            if (googleUMPConsentForm != null && googleUMPConsentInformation != null)
+            {
+                Log.Debug(Tag, "displaying consent form");
+
+                googleUMPConsentForm.Show(MainActivity.ActivityCurrent, new GoogleUMPConsentFormDismissedListener(
+                        (Xamarin.Google.UserMesssagingPlatform.FormError f) =>
+                        {
+                            if (googleUMPConsentInformation.ConsentStatus == 2) // required
+                            {
+                                Console.WriteLine("ERROR: MainActivity.DisplayAdvertisingConsentForm: Consent was dismissed; showing it again because consent is still required.");
+                                DisplayAdvertisingConsentForm();
+                            }
+                        }));
+            }
+            else
+            {
+                Log.Error(Tag, "Consent form or consent information are missing!");
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Log.Error(Tag, "consent request failed!\ncaught exception: " + ex);
+        }
+    }
+
+    public class GoogleUMPConsentFormDismissedListener : Java.Lang.Object, Xamarin.Google.UserMesssagingPlatform.IConsentFormOnConsentFormDismissedListener
+    {
+        public GoogleUMPConsentFormDismissedListener(Action<Xamarin.Google.UserMesssagingPlatform.FormError> failureAction)
+        {
+            a = failureAction;
+        }
+        public void OnConsentFormDismissed(Xamarin.Google.UserMesssagingPlatform.FormError f)
+        {
+            a(f);
+        }
+
+        private Action<Xamarin.Google.UserMesssagingPlatform.FormError> a = null;
+    }
+
+    public class GoogleUMPConsentUpdateFailureListener : Java.Lang.Object, Xamarin.Google.UserMesssagingPlatform.IConsentInformationOnConsentInfoUpdateFailureListener
+    {
+        public GoogleUMPConsentUpdateFailureListener(Action<Xamarin.Google.UserMesssagingPlatform.FormError> failureAction)
+        {
+            a = failureAction;
+        }
+        public void OnConsentInfoUpdateFailure(Xamarin.Google.UserMesssagingPlatform.FormError f)
+        {
+            a(f);
+        }
+
+        private Action<Xamarin.Google.UserMesssagingPlatform.FormError> a = null;
+    }
+
+    public class GoogleUMPConsentUpdateSuccessListener : Java.Lang.Object, Xamarin.Google.UserMesssagingPlatform.IConsentInformationOnConsentInfoUpdateSuccessListener
+    {
+        public GoogleUMPConsentUpdateSuccessListener(Action successAction)
+        {
+            a = successAction;
+        }
+
+        public void OnConsentInfoUpdateSuccess()
+        {
+            a();
+        }
+
+        private Action a = null;
+    }
+
+    public class GoogleUMPFormLoadFailureListener : Java.Lang.Object, Xamarin.Google.UserMesssagingPlatform.UserMessagingPlatform.IOnConsentFormLoadFailureListener
+    {
+        public GoogleUMPFormLoadFailureListener(Action<Xamarin.Google.UserMesssagingPlatform.FormError> failureAction)
+        {
+            a = failureAction;
+        }
+        public void OnConsentFormLoadFailure(Xamarin.Google.UserMesssagingPlatform.FormError e)
+        {
+            a(e);
+        }
+
+        private Action<Xamarin.Google.UserMesssagingPlatform.FormError> a = null;
+    }
+
+    public class GoogleUMPFormLoadSuccessListener : Java.Lang.Object, Xamarin.Google.UserMesssagingPlatform.UserMessagingPlatform.IOnConsentFormLoadSuccessListener
+    {
+        public GoogleUMPFormLoadSuccessListener(Action<Xamarin.Google.UserMesssagingPlatform.IConsentForm> successAction)
+        {
+            a = successAction;
+        }
+        public void OnConsentFormLoadSuccess(Xamarin.Google.UserMesssagingPlatform.IConsentForm f)
+        {
+            a(f);
+        }
+
+        private Action<Xamarin.Google.UserMesssagingPlatform.IConsentForm> a = null;
+    }
+
+    // BILLING
+    private void LoadBillingClient()
+    {
+        Console.WriteLine($"{Tag}: InitBillingClient");
+
+        // create billing client
+        MBillingClient = BillingClient.NewBuilder(MainActivity.ActivityCurrent)
+                .EnablePendingPurchases()
+                .SetListener(this)
+                // Configure other settings.
+                .Build();
+
+        // establish connection w/ google play billing
+        EstablishBillingConnection();
+    }
+
+    private class BillingClientStateListener : Java.Lang.Object, IBillingClientStateListener
+    {
+
+        public void OnBillingSetupFinished(BillingResult billingResult)
+        {
+            Log.Info(Tag, "OnBillingSetupFinished");
+            if (billingResult.ResponseCode == BillingResponseCode.Ok)
+            {
+                UpdatePurchasesAndProducts();
+            }
+
+        }
+        public void OnBillingServiceDisconnected()
+        {
+            Log.Info(Tag, "OnBillingServiceDisconnected");
+
+            MainActivity.ActivityCurrent.EstablishBillingConnection();
+        }
+
+        public async Task UpdatePurchasesAndProducts()
+        {
+            Log.Info(Tag, "UpdatePurchasesAndProducts");
+
+            // query available product details
+            var details = await QueryProductDetailsAsync();
+            if (details != null)
+            {
+                Log.Info(Tag, "product details received!");
+            }
+            else
+            {
+                Log.Error(Tag, "product details not received!");
+            }
+
+            // check if gold is purchased
+            var IsGold = await CheckSubscriptionStatusAsync();
+
+            // set IS_GOLD preference
+            Preferences.Default.Set("IS_GOLD", IsGold);
+        }
+
+        public async Task<bool> CheckSubscriptionStatusAsync()
+        {
+            Console.WriteLine($"{Tag}: CheckSubscriptionStatusAsync");
+
+            var queryPurchasesParams = QueryPurchasesParams.NewBuilder()
+                .SetProductType(BillingClient.SkuType.Subs)
+                .Build();
+
+            var purchasesResult = await MainActivity.ActivityCurrent.MBillingClient.QueryPurchasesAsync(queryPurchasesParams);
+
+            if (purchasesResult.Result.ResponseCode == BillingResponseCode.Ok)
+            {
+                var purchases = purchasesResult.Purchases;
+
+                if (purchases.Count == 0)
+                {
+                    Log.Info(Tag, "no purchases found");
+                    return false;
+                }
+
+                foreach (var purchase in purchases)
+                {
+                    string purchaseProductId = purchase.Products[0];
+                    Log.Info(Tag, "found purchase product id: " + purchaseProductId);
+
+                    if (purchaseProductId == "remove_ads_subs")
+                    {
+                        if (purchase.PurchaseState != PurchaseState.Purchased)
+                        {
+                            Log.Warn(Tag, "Purchase state != purchased");
+                        }
+                        else if (!purchase.IsAcknowledged)
+                        {
+                            MainActivity.ActivityCurrent.HandlePurchase(purchase);
+                        }
+                        return true;
+                    }
+
+                    return false;
+                }
+            }
+
+            Log.Error(Tag, "ResponseCode != Ok");
+            return false;
+        }
+
+        public async Task<ProductDetails> QueryProductDetailsAsync()
+        {
+            // query available product details
+            QueryProductDetailsParams queryProductDetailsParams =
+                    QueryProductDetailsParams.NewBuilder()
+                            .SetProductList(
+                                    ImmutableList.Create(
+                                            QueryProductDetailsParams.Product.NewBuilder()
+                                                    .SetProductId("remove_ads_subs")
+                                                    .SetProductType(BillingClient.ProductType.Subs)
+                                                    .Build()))
+                            .Build();
+
+            var result = await MainActivity.ActivityCurrent.MBillingClient.QueryProductDetailsAsync(
+                    queryProductDetailsParams);
+
+            if (result != null)
+            {
+                ImmutableList<BillingFlowParams.ProductDetailsParams> productDetailsParamsList =
+                        ImmutableList.Create(
+                                BillingFlowParams.ProductDetailsParams.NewBuilder()
+                                        // retrieve a value for "productDetails" by calling queryProductDetailsAsync()
+                                        .SetProductDetails(result.ProductDetails[0])
+                                        // For one-time products, "setOfferToken" method shouldn't be called.
+                                        // For subscriptions, to get an offer token, call
+                                        // ProductDetails.subscriptionOfferDetails() for a list of offers
+                                        // that are available to the user.
+                                        .SetOfferToken(result.ProductDetails[0]
+                                        .GetSubscriptionOfferDetails()[0]
+                                        .OfferToken)
+                                        .Build()
+                        );
+
+                Log.Info(Tag, "size of productDetailsParamsList: " + productDetailsParamsList.Count);
+
+                MainActivity.ActivityCurrent.MBillingFlowParams = BillingFlowParams.NewBuilder()
+                        .SetProductDetailsParamsList(productDetailsParamsList)
+                        .Build();
+
+                return result.ProductDetails[0];
+            }
+            else
+            {
+                Log.Error(Tag, "QueryProductDetailsAsync returned null");
+            }
+            return null;
+        }
+    }
+
+    async Task HandlePendingTransactions()
+    {
+        Log.Info(Tag, "HandlePendingTransactions");
+
+        // handle pending transactions
+        QueryPurchasesResult result = await MBillingClient.QueryPurchasesAsync(
+                QueryPurchasesParams.NewBuilder()
+                .SetProductType(BillingClient.ProductType.Subs)
+                .Build()
+        );
+
+        if (result.Purchases.Count > 0)
+        {
+            foreach (Purchase purchase in result.Purchases)
+            {
+                if (purchase.PurchaseState == PurchaseState.Purchased && !purchase.IsAcknowledged)
+                {
+                    HandlePurchase(purchase);
+                }
+            }
+        }
+    }
+
+    public class AcknowledgePurchaseResponseListener : Java.Lang.Object, IAcknowledgePurchaseResponseListener
+    {
+        public void OnAcknowledgePurchaseResponse(BillingResult billingResult)
+        {
+            Log.Info(Tag, "OnAcknowledgePurchaseResponse");
+            if (billingResult.ResponseCode == BillingResponseCode.Ok)
+            {
+                Log.Info(Tag, "purchase acknowledged!");
+
+                // run on ui thread
+                MainThread.BeginInvokeOnMainThread(() => {
+                    // show purchased toast
+                    AndHUD.Shared.ShowToast(MainActivity.ActivityCurrent, "Thank you for your support <3", MaskType.None, TimeSpan.FromMilliseconds(12000), false);
+                    MainPage mp = ((MainPage)Shell.Current.CurrentPage);
+                    mp.MIsNotGold = false;
+                    mp.CloseFragment();
+                    mp.ClearTextfield();
+                    mp.ShowEmptyUI();
+                });
+            }
+        }
+    }
+
+    public void LaunchBillingFlow()
+    {
+        Console.WriteLine($"{Tag}: LaunchBillingFlow");
+
+        if (MBillingFlowParams != null)
+        {
+            BillingResult BillingResult = MBillingClient.LaunchBillingFlow(MainActivity.ActivityCurrent, MBillingFlowParams);
+            Console.WriteLine($"{Tag}: BillingResult.ResponseCode=={BillingResult.ResponseCode}");
+            Console.WriteLine($"{Tag}: {BillingResult.DebugMessage}");
+        }
+        else
+        {
+            Log.Error(Tag, "MBillingFlowParams == null");
+        }
+    }
+
+    public void EstablishBillingConnection()
+    {
+        Log.Info(Tag, "EstablishBillingConnection");
+        MBillingClient.StartConnection(new BillingClientStateListener());
+    }
+
+    public void OnPurchasesUpdated(BillingResult billingResult, IList<Purchase>? purchases)
+    {
+        Console.WriteLine($"{Tag}: OnPurchasesUpdated");
+
+        var billingResponseCode = billingResult.ResponseCode;
+        Log.Info(Tag, "billing response code: " + billingResponseCode);
+
+        if (billingResult.ResponseCode == BillingResponseCode.Ok && purchases != null)
+        {
+            foreach (Purchase purchase in purchases)
+            {
+                Log.Info(Tag, "purchase found!");
+
+                string purchaseProductId = purchase.Products[0];
+                Log.Info(Tag, "found purchase product id: " + purchaseProductId);
+
+                if (purchaseProductId == "remove_ads_subs")
+                {
+                    if (purchase.PurchaseState != PurchaseState.Purchased)
+                    {
+                        Log.Warn(Tag, "purchase != purchased");
+                    }
+                    else if (!purchase.IsAcknowledged)
+                    {
+                        Log.Info(Tag, "purchase == purchased; IsAcknowledged == false");
+
+                        HandlePurchase(purchase);
+                    }
+                }
+            }
+        }
+        else
+        {
+            Log.Info(Tag, "no purchases found");
+        }
+    }
+
+    public void HandlePurchase(Purchase purchase)
+    {
+        Log.Info(Tag, "HandlePurchase");
+
+        AcknowledgePurchaseParams acknowledgePurchaseParams = AcknowledgePurchaseParams
+                .NewBuilder()
+                .SetPurchaseToken(purchase.PurchaseToken)
+                .Build();
+
+        MBillingClient.AcknowledgePurchase(acknowledgePurchaseParams, new AcknowledgePurchaseResponseListener());
     }
 }

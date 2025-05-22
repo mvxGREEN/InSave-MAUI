@@ -1,6 +1,10 @@
 ﻿using System.Text.RegularExpressions;
 using UraniumUI.Material.Controls;
 using MPowerKit.ProgressRing;
+using Firebase;
+
+using Microsoft.Maui.Handlers;
+
 
 #if ANDROID
 using Android.Content;
@@ -23,6 +27,7 @@ namespace InstaLoaderMaui
         private uint ANIM_LENGTH = 400;
         private readonly string INPUT_REGEX = "^$|((?:https?:\\/\\/)((?:www\\.)|(?:m\\.))?instagram\\.com\\/)";
         public static string AbsPathDocs = "";
+        public static string AbsPathDocsTemp = "";
 
         public static string AdmobIdApp = "ca-app-pub-7417392682402637~9405504691";
         public static string admobIdInterTest = "ca-app-pub-3940256099942544/1033173712";
@@ -235,6 +240,72 @@ namespace InstaLoaderMaui
         {
             InitializeComponent();
             BindingContext = this;
+        }
+
+        protected override void OnAppearing()
+        {
+            base.OnAppearing();
+
+            // prepare destination file dirs
+            PrepareFileDirs();
+
+            // check gold
+            MIsNotGold = !Preferences.Default.Get("IS_GOLD", false);
+            Console.WriteLine($"{Tag}, IS_GOLD={!MIsNotGold}");
+
+#if ANDROID
+            // init firebase
+            FirebaseApp.InitializeApp(MainActivity.ActivityCurrent);
+            // FirebaseAnalytics.GetInstance(MainActivity.ActivityCurrent);
+
+            // init admob
+            MainActivity.ActivityCurrent.LoadAdmob();
+#endif
+        }
+
+
+
+        protected override void OnDisappearing()
+        {
+            base.OnDisappearing();
+
+#if ANDROID
+            if (null != pwv)
+            {
+                ((IWebViewHandler)pwv.Handler).PlatformView.SetWebViewClient(null);
+                ((IWebViewHandler)pwv.Handler).PlatformView.Destroy();
+                pwv = null;
+            }
+#endif
+        }
+
+        public static void PrepareFileDirs()
+        {
+            Console.WriteLine($"{Tag}: PrepareFileDirs");
+
+            AbsPathDocs =
+                System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments);
+            AbsPathDocsTemp = AbsPathDocs + "/temp";
+
+#if ANDROID
+            AbsPathDocs = Path.Combine(Android.OS.Environment.ExternalStorageDirectory.AbsolutePath, Android.OS.Environment.DirectoryDocuments);
+
+            //AbsPathMusic = context.GetExternalFilesDir(Android.OS.Environment.DirectoryMusic).AbsolutePath;
+
+            Java.IO.File files = new Java.IO.File(AbsPathDocs);
+            files.SetWritable(true);
+            Directory.CreateDirectory(Path.GetDirectoryName(AbsPathDocs));
+            Console.WriteLine($"{Tag}: AbsPathDocs={AbsPathDocs}");
+
+            Java.IO.File temp_files = new Java.IO.File(AbsPathDocsTemp);
+            temp_files.SetWritable(true);
+            Directory.CreateDirectory(Path.GetDirectoryName(AbsPathDocsTemp));
+            Console.WriteLine($"{Tag}: AbsPathDocsTemp={AbsPathDocsTemp}");
+#endif
+
+            // append / to paths for future usage
+            AbsPathDocs += "/";
+            AbsPathDocsTemp += "/";
         }
 
         public static void ResetVars()
@@ -646,10 +717,20 @@ namespace InstaLoaderMaui
 
         private void OnCloseClicked(object sender, EventArgs e)
         {
-            ((AbsoluteLayout)FindByName("fragment_layout")).IsVisible = false;
+            CloseFragment();
         }
 
-
+        public void CloseFragment()
+        {
+            Console.WriteLine($"{Tag}: CloseFragment");
+            ((AbsoluteLayout)FindByName("fragment_layout")).IsVisible = false;
+            // clear views
+            MFragmentTitle = "";
+            MFragmentSubtitle = "";
+            MFragmentBody = "";
+            MFragmentPositive = "";
+            MFragmentDismiss = "";
+        }
 
         private void OnPasteClicked(object sender, EventArgs e)
         {
@@ -849,14 +930,19 @@ namespace InstaLoaderMaui
                 {
                     StatusLabel.Text = "Could not extract media URL.";
                     return;
+                } else
+                {
+                    Console.WriteLine($"{Tag} mediaUrl={mediaUrl}");
                 }
 
                 var fileName = Path.GetFileName(new Uri(mediaUrl).LocalPath);
-                var filePath = Path.Combine(FileSystem.Current.AppDataDirectory, fileName);
+                var filePath = Path.Combine(AbsPathDocs, fileName);
 
                 using var httpClient = new HttpClient();
                 var bytes = await httpClient.GetByteArrayAsync(mediaUrl);
                 File.WriteAllBytes(filePath, bytes);
+
+                ScanDownload(filePath);
 
                 StatusLabel.Text = $"Downloaded: {fileName}";
             }
@@ -868,19 +954,51 @@ namespace InstaLoaderMaui
         
         private async Task<string?> GetInstagramMediaUrlAsync(string postUrl)
         {
+            Console.WriteLine($"{Tag} GetInstagramMediaUrlAsync postUrl={postUrl}");
             using var httpClient = new HttpClient();
             var html = await httpClient.GetStringAsync(postUrl);
 
+            // print html
+            IEnumerable<string> htmlChunks = Split(html, 3500);
+            foreach (string v in htmlChunks)
+            {
+                Console.WriteLine($"{Tag} HTML:");
+                Console.WriteLine($"{Tag} {v}");
+            }
+
             // Look for og:image or og:video meta tags
+            string dlUrl = "";
             var imgMatch = Regex.Match(html, "<meta property=\"og:image\" content=\"([^\"]+)\"");
             if (imgMatch.Success)
-                return imgMatch.Groups[1].Value;
+                dlUrl = imgMatch.Groups[1].Value.ToString();
 
             var videoMatch = Regex.Match(html, "<meta property=\"og:video\" content=\"([^\"]+)\"");
             if (videoMatch.Success)
-                return videoMatch.Groups[1].Value;
+                dlUrl = videoMatch.Groups[1].Value.ToString();
 
-            return null;
+            if (dlUrl.Contains("&amp;"))
+                dlUrl = dlUrl.Replace("&amp;", "&");
+
+            Console.WriteLine($"{Tag} dlUrl={dlUrl}");
+
+            return dlUrl;
+        }
+
+        public static IEnumerable<string> Split(string str, int chunkSize)
+        {
+            return Enumerable.Range(0, str.Length / chunkSize)
+                .Select(i => str.Substring(i * chunkSize, chunkSize));
+        }
+
+        public static async Task ScanDownload(string filepath)
+        {
+#if ANDROID
+            // scan media file
+            Console.WriteLine($"{Tag} scanning new media file at: MFilePath={filepath}");
+            Android.Net.Uri uri = Android.Net.Uri.Parse("file://" + filepath);
+            Intent scanFileIntent = new Intent(Intent.ActionMediaScannerScanFile, uri);
+            MainActivity.ActivityCurrent.SendBroadcast(scanFileIntent);
+#endif
         }
 
     }
