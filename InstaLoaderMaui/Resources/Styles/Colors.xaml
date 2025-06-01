@@ -13,6 +13,7 @@
 
     <Color x:Key="Gold">#D4AF37</Color>
 
+    <!-- mvx's shadow hexes -->
     <Color x:Key="PointOh">#00000000</Color>
     <Color x:Key="PointOhFive">#0D0D0D0D</Color>
     <Color x:Key="PointOne">#1a1a1a1a</Color>
@@ -33,7 +34,6 @@
     <Color x:Key="PointEightFive">#d9d9d9d9</Color>
     <Color x:Key="PointNine">#e6e6e6e6</Color>
     <Color x:Key="PointNineFive">#f2f2f2f2</Color>
-
     <Color x:Key="DarkPointOh">#00000000</Color>
     <Color x:Key="DarkPointOhFive">#0D000000</Color>
     <Color x:Key="DarkPointOne">#1a000000</Color>
@@ -54,12 +54,6 @@
     <Color x:Key="DarkPointEightFive">#d9000000</Color>
     <Color x:Key="DarkPointNine">#e6000000</Color>
     <Color x:Key="DarkPointNineFive">#f2000000</Color>
-
-    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}"/>
-    <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}"/>
-    <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource Tertiary}"/>
-    <SolidColorBrush x:Key="WhiteBrush" Color="{StaticResource White}"/>
-    <SolidColorBrush x:Key="BlackBrush" Color="{StaticResource Black}"/>
 
     <Color x:Key="White">White</Color>
     <Color x:Key="Black">Black</Color>

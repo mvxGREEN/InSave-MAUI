@@ -49,14 +49,15 @@
                             ClearButtonVisibility="WhileEditing"
                             TextChanged="OnTextChanged"
                             Completed="OnTextCompleted">
-                    <validation:RegexValidation Pattern="^$|((?:https?:\/\/)((?:www\.)|(?:m\.))?instagram\.com\/)" Message="Please paste an instagram url." />
+                    <validation:RegexValidation Pattern="^$|((?:https?:\/\/)((?:www\.)|(?:m\.))?instagram\.com\/)" Message="Please paste an instagram link." />
                     <!-- PASTE BUTTON -->
                     <material:TextField.Attachments>
                         <material:ButtonView>
                             <ImageButton x:Name="paste_button"
                                 Clicked="OnPasteClicked"
-                                HeightRequest="30"
-                                WidthRequest="30">
+                                HeightRequest="32"
+                                WidthRequest="32"
+                                Margin="0,0,8,0">
                                 <ImageButton.Source>
                                     <FontImageSource FontFamily="FASolid" Color="{AppThemeBinding Dark={StaticResource PointEight}, Light={StaticResource DarkPointEight}}"  Glyph="{x:Static fa:Solid.BoltLightning}"/>
                                 </ImageButton.Source>

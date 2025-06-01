@@ -5,6 +5,8 @@ using Firebase;
 using Microsoft.Maui.Handlers;
 using InstaLoaderMaui.Platforms.Android;
 using Android.Util;
+using Android.Webkit;
+
 
 #if ANDROID
 using Android.Content;
@@ -764,7 +766,7 @@ namespace InstaLoaderMaui
 
             // download input
             var input = main_textfield.Text?.Trim();
-            DownloadInput(input);
+            DownloadPost(input);
         }
 
         private void OnTextChanged(object sender, TextChangedEventArgs e)
@@ -789,7 +791,7 @@ namespace InstaLoaderMaui
 
                 if (input.Length == 0)
                 {
-                    Console.WriteLine("text field text cleared!");
+                    Console.WriteLine("text field text cleared");
                     currentText = "";
                     ShowEmptyUI();
                 }
@@ -843,7 +845,6 @@ namespace InstaLoaderMaui
                 Console.WriteLine($"{Tag} input invalid");
 
                 // log event
-#if ANDROID
                 try
                 {
                     Bundle bun = new();
@@ -857,8 +858,6 @@ namespace InstaLoaderMaui
                 {
                     Console.WriteLine($"{Tag} failed to log event: {e.Message}");
                 }
-#endif
-
                 return;
             }
 
@@ -874,7 +873,6 @@ namespace InstaLoaderMaui
             }
 
             // log event
-#if ANDROID
             try
             {
                 Bundle bundle = new Bundle();
@@ -889,16 +887,47 @@ namespace InstaLoaderMaui
             {
                 Console.WriteLine($"{Tag} failed to log event: {e.Message}");
             }
-#endif
+            // load url in webview
+            MainThread.BeginInvokeOnMainThread(() => {
+                pwv = (Microsoft.Maui.Controls.WebView)FindByName("preview_webview");
+                ((IWebViewHandler)pwv.Handler).PlatformView
+                    .SetWebViewClient(new MWebViewClient());
+                ((IWebViewHandler)pwv.Handler).PlatformView.Post(() =>
+                {
+                    ((IWebViewHandler)pwv.Handler).PlatformView
+                    .LoadUrl(input);
+                });
+            });
 
-            DownloadInput(input);
-            //Dispatcher.Dispatch(async () => await DownloadUrl(input));
+            try {
+                Task.Run(async () =>
+                {
+                    MThumbnailUrl = await GetPostThumbnailUrl(input);
+
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        ShowPreviewUI();
+                    });
+
+                });
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"{Tag} failed to load url in webview: {e.Message}");
+            }
+            
         }
 
-        private void DownloadInput(string input)
+        
+        private void DownloadProfile(string postUrl)
+        {
+            // TODO download profile if gold
+        }
+
+        private void DownloadPost(string postUrl)
         {
             // validate input
-            var match = Regex.Match(input, INPUT_REGEX, RegexOptions.IgnoreCase);
+            var match = Regex.Match(postUrl, INPUT_REGEX, RegexOptions.IgnoreCase);
             if (!match.Success)
             {
                 Console.WriteLine($"{Tag} input invalid");
@@ -910,7 +939,7 @@ namespace InstaLoaderMaui
                     Bundle bun = new();
                     bun.PutString("input", "load");
                     bun.PutBoolean("input_valid", false);
-                    bun.PutString("input_text", input);
+                    bun.PutString("input_text", postUrl);
                     bun.PutString("app_name", "soundloader");
                     FirebaseAnalytics.GetInstance((MainActivity)Platform.CurrentActivity).LogEvent("input_load", bun);
                 }
@@ -934,12 +963,12 @@ namespace InstaLoaderMaui
             }
 
             // trim to post id
-            if (input.Contains("instagram.com/p/"))
+            if (postUrl.Contains("instagram.com/p/"))
             {
-                input = input[(input.IndexOf("instagram.com/p/") + 16)..];
-                if (input.Contains('/'))
+                postUrl = postUrl[(postUrl.IndexOf("instagram.com/p/") + 16)..];
+                if (postUrl.Contains('/'))
                 {
-                    input = input[..input.IndexOf('/')];
+                    postUrl = postUrl[..postUrl.IndexOf('/')];
                 }
             }
             else
@@ -948,97 +977,14 @@ namespace InstaLoaderMaui
                 return;
             }
 
-            PostId = input;
+            PostId = postUrl;
 
             Services.Start();
         }
 
-        /*
-         static async Task<List<string>> GetInstagramMediaUrlsAsync(string postUrl)
+        private async Task<string?> GetPostThumbnailUrl(string postUrl)
         {
-            var mediaUrls = new List<string>();
-            using var httpClient = new HttpClient();
-
-            // Set User-Agent to mimic a desktop browser
-            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
-            );
-
-            var html = await httpClient.GetStringAsync(postUrl);
-
-            // 1. Extract og:image and og:video meta tags
-            var metaRegex = new Regex("<meta property=\"og:(image|video)\" content=\"([^\"]+)\"", RegexOptions.IgnoreCase);
-            foreach (Match match in metaRegex.Matches(html))
-            {
-                var url = match.Groups[2].Value.Replace("&amp;", "&");
-                if (!mediaUrls.Contains(url))
-                    mediaUrls.Add(url);
-            }
-
-            // 2. Extract media URLs from embedded JSON (for carousels/multiple images/videos)
-            var sharedDataMatch = Regex.Match(html, @"<script type=""text/javascript"">window\._sharedData = (.*?);</script>");
-            if (sharedDataMatch.Success)
-            {
-                try
-                {
-                    var json = sharedDataMatch.Groups[1].Value;
-                    using var doc = JsonDocument.Parse(json);
-                    var root = doc.RootElement;
-
-                    // Traverse to media items
-                    var mediaNodes = root
-                        .GetProperty("entry_data")
-                        .GetProperty("PostPage")[0]
-                        .GetProperty("graphql")
-                        .GetProperty("shortcode_media");
-
-                    // Single image/video
-                    if (mediaNodes.TryGetProperty("display_url", out var displayUrl))
-                    {
-                        var url = displayUrl.GetString();
-                        if (!string.IsNullOrEmpty(url) && !mediaUrls.Contains(url))
-                            mediaUrls.Add(url);
-                    }
-                    if (mediaNodes.TryGetProperty("video_url", out var videoUrl))
-                    {
-                        var url = videoUrl.GetString();
-                        if (!string.IsNullOrEmpty(url) && !mediaUrls.Contains(url))
-                            mediaUrls.Add(url);
-                    }
-
-                    // Carousel (multiple media)
-                    if (mediaNodes.TryGetProperty("edge_sidecar_to_children", out var sidecar))
-                    {
-                        foreach (var edge in sidecar.GetProperty("edges").EnumerateArray())
-                        {
-                            var node = edge.GetProperty("node");
-                            if (node.TryGetProperty("display_url", out var dUrl))
-                            {
-                                var url = dUrl.GetString();
-                                if (!string.IsNullOrEmpty(url) && !mediaUrls.Contains(url))
-                                    mediaUrls.Add(url);
-                            }
-                            if (node.TryGetProperty("video_url", out var vUrl))
-                            {
-                                var url = vUrl.GetString();
-                                if (!string.IsNullOrEmpty(url) && !mediaUrls.Contains(url))
-                                    mediaUrls.Add(url);
-                            }
-                        }
-                    }
-                }
-                catch
-                {
-                    Console.WriteLine($"{Tag} did not find embedded json");
-                }
-            }
-
-            return mediaUrls;
-        }
-
-        private async Task<string?> GetInstagramMediaUrlAsync(string postUrl)
-        {
-            Console.WriteLine($"{Tag} GetInstagramMediaUrlAsync postUrl={postUrl}");
+            Console.WriteLine($"{Tag} GetThumbnailUrl postUrl={postUrl}");
             using var httpClient = new HttpClient();
             var html = await httpClient.GetStringAsync(postUrl);
 
@@ -1051,24 +997,22 @@ namespace InstaLoaderMaui
             }
 
             // Look for og:image or og:video meta tags
-            string dlUrl = "";
+            string turl = "";
             var imgMatch = Regex.Match(html, "<meta property=\"og:image\" content=\"([^\"]+)\"");
             if (imgMatch.Success)
-                dlUrl = imgMatch.Groups[1].Value.ToString();
+                turl = imgMatch.Groups[1].Value.ToString();
 
             var videoMatch = Regex.Match(html, "<meta property=\"og:video\" content=\"([^\"]+)\"");
             if (videoMatch.Success)
-                dlUrl = videoMatch.Groups[1].Value.ToString();
+                turl = videoMatch.Groups[1].Value.ToString();
 
-            if (dlUrl.Contains("&amp;"))
-                dlUrl = dlUrl.Replace("&amp;", "&");
+            if (turl.Contains("&amp;"))
+                turl = turl.Replace("&amp;", "&");
 
-            Console.WriteLine($"{Tag} dlUrl={dlUrl}");
+            Console.WriteLine($"{Tag} found thumbnail turl={turl}");
 
-            return dlUrl;
+            return turl;
         }
-         */
-
 
         public static IEnumerable<string> Split(string str, int chunkSize)
         {
@@ -1076,6 +1020,29 @@ namespace InstaLoaderMaui
                 .Select(i => str.Substring(i * chunkSize, chunkSize));
         }
 
+        public class MWebViewClient : WebViewClient
+        {
+            private static readonly string Tag = nameof(MWebViewClient);
+
+            // TODO track cookie for login session (USER?)
+
+            public override WebResourceResponse? ShouldInterceptRequest(global::Android.Webkit.WebView? view, IWebResourceRequest? request)
+            {
+                string url = request.Url.ToString();
+                Console.WriteLine($"{Tag} ShouldInterceptRequest url={url}");
+                MainPage mp = (MainPage)Shell.Current.CurrentPage;
+
+                // remove self from webview when finished intercepting request
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    ((IWebViewHandler)mp.pwv.Handler).PlatformView.SetWebViewClient(null);
+                });
+
+                return base.ShouldInterceptRequest(view, request);
+            }
+
+        }
+    
     }
 
 }
