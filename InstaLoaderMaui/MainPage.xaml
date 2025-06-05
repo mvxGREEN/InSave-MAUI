@@ -76,25 +76,26 @@
                         ZIndex="1"
                         AbsoluteLayout.LayoutBounds="0,0,1,460"
                         AbsoluteLayout.LayoutFlags="PositionProportional,WidthProportional">
-                        <!-- THUMBNAIL -->
-                        <Image x:Name="preview_img"
-                            Source="{Binding MThumbnailUrl}"
-                            BackgroundColor="{StaticResource PointOh}"
-                            Aspect="AspectFill"
-                            ZIndex="1"
-                            Margin="-20"
-                            Opacity="0.0"/>
-                        <!-- WEBVIEW -->
-                        <ScrollView HorizontalScrollBarVisibility="Never">
-                            <Grid>
-                                <WebView x:Name="preview_webview"
-                                    AbsoluteLayout.LayoutBounds="0,0,1,460"
-                                    AbsoluteLayout.LayoutFlags="PositionProportional,WidthProportional"
-                                    IsVisible="False"
-                                    IsEnabled="False"/>
-                            </Grid>
-                        </ScrollView>
-                        
+                        <StackLayout>
+                            <!-- THUMBNAIL -->
+                            <Image x:Name="preview_img"
+                                Source="{Binding MThumbnailUrl}"
+                                BackgroundColor="{StaticResource PointOh}"
+                                Aspect="AspectFill"
+                                ZIndex="1"
+                                Margin="-20"
+                                Opacity="0.0"/>
+                            <!-- WEBVIEW -->
+                            <ScrollView HorizontalScrollBarVisibility="Never">
+                                <Grid>
+                                    <WebView x:Name="preview_webview"
+                                        AbsoluteLayout.LayoutBounds="0,0,1,460"
+                                        AbsoluteLayout.LayoutFlags="PositionProportional,WidthProportional"
+                                        IsVisible="False"
+                                        IsEnabled="False"/>
+                                </Grid>
+                            </ScrollView>
+                        </StackLayout>
                     </Frame>
                     
                     <!-- PROGRESS -->

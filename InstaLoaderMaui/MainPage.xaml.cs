@@ -543,7 +543,7 @@ namespace InstaLoaderMaui
 #endif
 
             // change progress message
-            MMessageProgress = "Starting download…\nThis may take a moment.";
+            MMessageProgress = "Downloading…";
 
             ProgressRing pr = (ProgressRing)FindByName("progress_ring");
             ProgressRing prd = (ProgressRing)FindByName("progress_ring_dlr");
@@ -1067,14 +1067,18 @@ namespace InstaLoaderMaui
             string turl = "";
             var imgMatch = Regex.Match(html, "<meta property=\"og:image\" content=\"([^\"]+)\"");
             if (imgMatch.Success)
+            {
+                Console.WriteLine($"{Tag} found thumbnail");
                 turl = imgMatch.Groups[1].Value.ToString();
+            }
+                
 
             // fix url 
             if (turl.Contains("&amp;"))
                 turl = turl.Replace("&amp;", "&");
 
             // check if empty (not logged in)
-            if (turl.Length > 0)
+            if (turl.Length == 0)
             {
                 Console.WriteLine($"{Tag} empty og:image -- not logged in");
 
@@ -1106,7 +1110,11 @@ namespace InstaLoaderMaui
             public static List<string> ExtractUrlsFromHtml(string html)
             {
                 if (string.IsNullOrEmpty(html))
+                {
+                    Console.WriteLine("html is empty!");
                     return new List<string>();
+                }
+                    
 
                 // Regex to match URLs in href/src attributes and plain text
                 var urlPattern = @"(?i)\b((?:https?|ftp):\/\/[^\s""'<>]+)";
@@ -1124,7 +1132,7 @@ namespace InstaLoaderMaui
                     if (match.Success)
                     {
                         // TODO handle videos, non-JPGs
-                        if ((match.Value.Contains(".jpg?se") && match.Value.Contains("720x"))
+                        if ((match.Value.Contains(".jpg?se") && !match.Value.Contains("320x"))
                             || match.Value.Contains(".mp4?"))
                         {
                             var url = match.Value.Replace("\\\\", "");
