@@ -683,7 +683,7 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
     public class DownloadReceiver : BroadcastReceiver
     {
         private static readonly string Tag = nameof(DownloadReceiver);
-        private static int MCount = 0;
+        public static int MCount = 0;
 
         public override void OnReceive(Context context, Intent intent)
         {
@@ -693,7 +693,7 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
             if (DownloadManager.ActionDownloadComplete.Equals(action))
             {
                 Console.WriteLine($"{Tag} downloaded file");
-                if (MCount == MainPage.MDownloadUrls.Count)
+                if (MCount >= MainPage.MDownloadUrls.Count)
                 {
                     Console.WriteLine($"{Tag} last file downloaded!");
                     // update progress
@@ -702,6 +702,7 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
                     int percent = (int)(progress * 100.0);
                     pr.Progress = progress;
                     pr.IsIndeterminate = false;
+                    mp.MMessageProgress = $"Downloading finishing…";
 
                     // send finish broadcast
                     MainActivity.ActivityCurrent.SendBroadcast(new Intent("69"));
@@ -727,7 +728,7 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
                     int percent = (int)(progress * 100.0);
                     pr.Progress = progress;
                     pr.IsIndeterminate = false;
-
+                    mp.MMessageProgress = $"Downloading finishing…\n{percent}%";
                 }
             }
         }

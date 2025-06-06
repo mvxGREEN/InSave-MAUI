@@ -92,7 +92,7 @@
                                         AbsoluteLayout.LayoutBounds="0,0,1,360"
                                         AbsoluteLayout.LayoutFlags="PositionProportional,WidthProportional"
                                         IsVisible="False"
-                                        IsEnabled="False"/>
+                                        IsEnabled="True"/>
                                 </Grid>
                             </ScrollView>
                         </StackLayout>

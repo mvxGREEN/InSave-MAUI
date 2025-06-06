@@ -318,6 +318,7 @@ namespace InstaLoaderMaui
             MainPage.MFailedShowInter = false;
             MIsAlreadyLoading = false;
             MDownloadUrls = new List<string>();
+            MainActivity.DownloadReceiver.MCount = 0;
             mp.MThumbnailUrl = "";
             mp.MTitle = "";
             mp.MArtist = "";
@@ -359,8 +360,10 @@ namespace InstaLoaderMaui
             var pmv = (Microsoft.Maui.Controls.WebView)FindByName("preview_webview");
             pmv.IsEnabled = false;
             pmv.IsVisible = false;
-            //((IWebViewHandler)pwv.Handler).PlatformView.Settings.UserAgentString = UA_DESKTOP_CHROME;
-            //ModifyWebView();
+
+            // set width cookie
+            CookieManager.Instance.SetCookie("https://www.instagram.com/?hl=en", "wd=1680x881");
+            CookieManager.Instance.SetCookie(MInput, "wd=1680x881");
 
             // hide buttons
             ButtonView finishBtn = (ButtonView)FindByName("finish_btn");
@@ -787,7 +790,7 @@ namespace InstaLoaderMaui
                     // download private media
                     for (int i = 0; i < MDownloadUrls.Count; i++)
                     {
-                        Task.Delay(433).Wait();
+                        Task.Delay(333).Wait();
                         await DownloadUrl(MDownloadUrls[i], i);
                     }
                 }
@@ -902,7 +905,7 @@ namespace InstaLoaderMaui
             {
                 domain = domain[..domain.IndexOf('/')];
             }
-            MInput = input;
+            MInput = input + "&size=1";
             Console.WriteLine($"{Tag} MInput={MInput}");
 
             // log event
@@ -982,15 +985,16 @@ namespace InstaLoaderMaui
                     // show login page in webview
                     MainThread.BeginInvokeOnMainThread(() =>
                     {
+                        // init webview
                         pwv = (Microsoft.Maui.Controls.WebView)FindByName("preview_webview");
                         //pwv.IsVisible = true;
                         pwv.IsEnabled = true;
 
                         ((IWebViewHandler)pwv.Handler).PlatformView
                             .SetWebViewClient(new MWebViewClient());
+                        //((IWebViewHandler)pwv.Handler).PlatformView.Settings.UserAgentString = UA_MOBILE_CHROME;
+                        
 
-                        //((IWebViewHandler)pwv.Handler).PlatformView.Settings.UserAgentString =
-                        //        UA_DESKTOP_CHROME;
 
                         ((IWebViewHandler)pwv.Handler).PlatformView.Post(() =>
                         {
@@ -1129,11 +1133,24 @@ namespace InstaLoaderMaui
                     Console.WriteLine($"{Tag} html does not contain \".mp4?\"");
                 }
 
-                // Regex to match URLs in href/src attributes and plain text
-                var urlPattern = @"(?i)\b((?:https?|ftp):\/\/[^\s""'<>]+)";
+                if (html.Contains("_e35_tt6"))
+                {
+                    Console.WriteLine($"{Tag} html contains \"_e35_tt6\"");
+                } else
+                {
+                    Console.WriteLine($"{Tag} html does not contain \"_e35_tt6\"");
+                }
+
+                    // Regex to match URLs in href/src attributes and plain text
+                    var urlPattern = @"(?i)\b((?:https?|ftp):\/\/[^\s""'<>]+)";
                 
 
                 if (html.Contains("https:\\\\/\\\\/")) { 
+                    html = html.Replace("https:\\\\/\\\\/", "https://");
+                }
+
+                if (html.Contains("\\u0026"))
+                {
                     html = html.Replace("https:\\\\/\\\\/", "https://");
                 }
 
@@ -1149,16 +1166,16 @@ namespace InstaLoaderMaui
                         {
                             // format
                             var url = match.Value;
-                            
+                            url = url.Replace("\\%", "%");
                             url = url.Replace("&amp;", "&");
-                            url = url.Replace("\u0025", "%");
-                            url = url.Replace("\u0026", "&");
+                            url = url.Replace("\\u0025", "%");
+                            url = url.Replace("\\u0026", "&");
                             url = url.Replace("\\\\", "");
                             url = url.Replace("&amp;", "&");
                             // trim trailing slash
-                            if (url.EndsWith('\\'))
+                            if (url.Contains('\\'))
                             {
-                                url = url.Substring(0, url.Length - 1);
+                                url = url.Replace("\\", "");
                             }
 
                             // filter duplicates & unwanted resolutions
@@ -1166,6 +1183,7 @@ namespace InstaLoaderMaui
                                 && !url.Contains("320x320") 
                                 && !url.Contains("640x640")
                                 && !url.Contains("150x150")
+                                && !url.Contains(".jpg?_nc_ht")
                                 && !url.Contains("BaseURL"))
                             {
                                 urls.Add(url);
@@ -1185,6 +1203,10 @@ namespace InstaLoaderMaui
                 MCookies = CookieManager.Instance.GetCookie(url);
                 Preferences.Default.Set("COOKIES", MCookies);
                 Console.WriteLine($"{Tag} MCookies={MCookies}");
+
+                // set width cookie
+                CookieManager.Instance.SetCookie("https://www.instagram.com/?hl=en", "wd=1680x881");
+                CookieManager.Instance.SetCookie(MInput, "wd=1680x881");
 
                 if (url.Contains(".com/s/") || url.Contains(".com/stories/"))
                 {
@@ -1267,6 +1289,10 @@ namespace InstaLoaderMaui
                     {
                         Console.WriteLine($"{Tag} loading original url MInput={MInput}");
                         MIsAlreadyLoading = true;
+                        view.Settings.CacheMode = CacheModes.NoCache;
+                        view.Settings.UseWideViewPort = true;
+                        view.Settings.LoadWithOverviewMode = true;
+                        view.Settings.JavaScriptEnabled = true;
                         view.LoadUrl(MInput);
                     }
                 });
