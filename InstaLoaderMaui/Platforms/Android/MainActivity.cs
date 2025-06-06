@@ -702,7 +702,7 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
                     int percent = (int)(progress * 100.0);
                     pr.Progress = progress;
                     pr.IsIndeterminate = false;
-                    mp.MMessageProgress = $"Downloading finishing…";
+                    mp.MMessageProgress = $"Finishing…";
 
                     // send finish broadcast
                     MainActivity.ActivityCurrent.SendBroadcast(new Intent("69"));
@@ -728,7 +728,7 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
                     int percent = (int)(progress * 100.0);
                     pr.Progress = progress;
                     pr.IsIndeterminate = false;
-                    mp.MMessageProgress = $"Downloading finishing…\n{percent}%";
+                    mp.MMessageProgress = $"Downloading…\n{percent}%";
                 }
             }
         }

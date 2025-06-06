@@ -925,7 +925,7 @@ namespace InstaLoaderMaui
             }
 
             // get id
-            if (input.Contains(".com/p/"))
+            if (input.Contains(".com/p/") || input.Contains(".com/reel/"))
             {
                 // post
                 IgId = input[..input.LastIndexOf('/')];
@@ -1183,6 +1183,8 @@ namespace InstaLoaderMaui
                                 && !url.Contains("320x320") 
                                 && !url.Contains("640x640")
                                 && !url.Contains("150x150")
+                                && !url.Contains("480x480")
+                                && !url.Contains("240x240")
                                 && !url.Contains(".jpg?_nc_ht")
                                 && !url.Contains("BaseURL"))
                             {
@@ -1256,6 +1258,7 @@ namespace InstaLoaderMaui
                         ((MainPage)Shell.Current.CurrentPage).MThumbnailUrl = MDownloadUrls.FirstOrDefault();
                         //((MainPage)Shell.Current.CurrentPage).MTitle = 
 
+                        
                         //((IWebViewHandler)pmv.Handler).PlatformView.SetWebViewClient(null);
                         pmv.IsVisible = false;
                         pmv.IsEnabled = false;
