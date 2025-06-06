@@ -692,9 +692,10 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
             string action = intent.Action;
             if (DownloadManager.ActionDownloadComplete.Equals(action))
             {
-                Console.WriteLine($"{Tag} download complete.");
+                Console.WriteLine($"{Tag} downloaded file");
                 if (MCount == MainPage.MDownloadUrls.Count)
                 {
+                    Console.WriteLine($"{Tag} last file downloaded!");
                     // update progress
                     ProgressRing pr = ((ProgressRing)mp.FindByName("progress_ring"));
                     double progress = MCount / (double)MainPage.MDownloadUrls.Count;
@@ -718,7 +719,7 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
                 }
                 else
                 {
-                    Console.WriteLine($"{Tag} image downloaded");
+                    Console.WriteLine($"{Tag} media downloaded");
 
                     // update progress
                     ProgressRing pr = ((ProgressRing)mp.FindByName("progress_ring"));
@@ -782,7 +783,7 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
                         else
                         {
                             Console.WriteLine($"{Tag} scanning file at: file.AbsolutePath={file.AbsolutePath}");
-                            //ScanDownload(file.AbsolutePath);
+                            ScanDownload(file.AbsolutePath);
                         }
                     }
                 }
@@ -800,7 +801,7 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
         }
     }
 
-    private async Task ScanDownload(string filepath)
+    private static async Task ScanDownload(string filepath)
     {
         // scan media file
         Console.WriteLine($"{Tag} scanning new media file at: MFilePath={filepath}");

@@ -74,7 +74,7 @@
                         BackgroundColor="{StaticResource PointOh}"
                         CornerRadius="10"
                         ZIndex="1"
-                        AbsoluteLayout.LayoutBounds="0,0,1,460"
+                        AbsoluteLayout.LayoutBounds="0,0,1,360"
                         AbsoluteLayout.LayoutFlags="PositionProportional,WidthProportional">
                         <StackLayout>
                             <!-- THUMBNAIL -->
@@ -86,11 +86,11 @@
                                 Margin="-20"
                                 Opacity="0.0"/>
                             <!-- WEBVIEW -->
-                            <ScrollView HorizontalScrollBarVisibility="Never">
+                            <ScrollView HorizontalScrollBarVisibility="Never"
+                                        AbsoluteLayout.LayoutBounds="0,0,1,360"
+                                        AbsoluteLayout.LayoutFlags="PositionProportional,WidthProportional">
                                 <Grid>
                                     <WebView x:Name="preview_webview"
-                                        AbsoluteLayout.LayoutBounds="0,0,1,460"
-                                        AbsoluteLayout.LayoutFlags="PositionProportional,WidthProportional"
                                         IsVisible="False"
                                         IsEnabled="False"/>
                                 </Grid>
@@ -138,20 +138,18 @@
                         AbsoluteLayout.LayoutBounds="0,0,1,95"
                         AbsoluteLayout.LayoutFlags="PositionProportional,WidthProportional">
                         <StackLayout Orientation="Horizontal"
-                             Spacing="10">
+                            Spacing="10">
                             <!-- DOWNLOAD BUTTON -->
                             <material:ButtonView x:Name="dl_btn"
-                                WidthRequest="56"
-                                HeightRequest="56"
+                                WidthRequest="60"
+                                HeightRequest="60"
                                 Opacity="0.0">
                                 <ImageButton 
-                                    Clicked="OnDownloadClicked"
-                                    WidthRequest="32"
-                                    HeightRequest="32">
+                                    Clicked="OnDownloadClicked">
                                     <ImageButton.Source>
                                         <FontImageSource FontFamily="FASolid"        
-                                             Glyph="{x:Static fa:Solid.CircleDown}" 
-                                             Color="{AppThemeBinding Dark={StaticResource PointEightFive}, Light={StaticResource DarkPointEightFive}}"/>
+                                            Glyph="{x:Static fa:Solid.CircleDown}" 
+                                            Color="{AppThemeBinding Dark={StaticResource PointEightFive}, Light={StaticResource DarkPointEightFive}}"/>
                                     </ImageButton.Source>
                                 </ImageButton>
                             </material:ButtonView>
@@ -166,15 +164,15 @@
                                  IsVisible="False"/>
                             <!-- FINISH BUTTON -->
                             <material:ButtonView x:Name="finish_btn"
-                                    WidthRequest="56"
-                                    HeightRequest="56"
-                                    Opacity="0.0"
-                                    IsVisible="False">
+                                WidthRequest="60"
+                                HeightRequest="60"
+                                Opacity="0.0"
+                                IsVisible="False">
                                 <ImageButton>
                                     <ImageButton.Source>
                                         <FontImageSource FontFamily="FASolid"
-                                             Glyph="{x:Static fa:Solid.CircleCheck}" 
-                                             Color="{AppThemeBinding Dark={StaticResource White}, Light={StaticResource Black}}"/>
+                                            Glyph="{x:Static fa:Solid.CircleCheck}" 
+                                            Color="{AppThemeBinding Dark={StaticResource White}, Light={StaticResource Black}}"/>
                                     </ImageButton.Source>
                                 </ImageButton>
                             </material:ButtonView>

@@ -792,19 +792,24 @@ namespace InstaLoaderMaui
                 ma.RegisterReceiver(MainActivity.MDownloadReceiver, new IntentFilter(DownloadManager.ActionDownloadComplete));
             }
 
-            if (MDownloadUrls.Count > 0) {
-                // download private media
-                for (int i = 0; i < MDownloadUrls.Count; i++)
-                {
-                    Task.Delay(100).Wait();
-                    await DownloadUrl(MDownloadUrls[i], i);
-                }
-            } else
+            Task.Run(async () =>
             {
-                // download public media
-                var input = main_textfield.Text?.Trim();
-                DownloadPost(input);
-            }
+                if (MDownloadUrls.Count > 0)
+                {
+                    // download private media
+                    for (int i = 0; i < MDownloadUrls.Count; i++)
+                    {
+                        Task.Delay(1000).Wait();
+                        await DownloadUrl(MDownloadUrls[i], i);
+                    }
+                }
+                else
+                {
+                    // download public media
+                    var input = main_textfield.Text?.Trim();
+                    DownloadPost(input);
+                }
+            });
         }
 
         private void OnTextChanged(object sender, Microsoft.Maui.Controls.TextChangedEventArgs e)
@@ -1035,6 +1040,7 @@ namespace InstaLoaderMaui
             DownloadManager.Request request = new DownloadManager.Request(fileUri);
             request.SetTitle("instaloader");
             request.SetDescription("");
+            request.SetNotificationVisibility(DownloadVisibility.VisibleNotifyCompleted);
             request.SetDestinationInExternalPublicDir(
                 fileDir, fileName);
             downloadManager.Enqueue(request);
@@ -1073,7 +1079,7 @@ namespace InstaLoaderMaui
             if (imgMatch.Success)
             {
                 Console.WriteLine($"{Tag} found thumbnail");
-                turl = imgMatch.Groups[1].Value.ToString();
+                turl = imgMatch.Groups[0].Value.ToString();
             }
                 
 
@@ -1081,12 +1087,10 @@ namespace InstaLoaderMaui
             if (turl.Contains("&amp;"))
                 turl = turl.Replace("&amp;", "&");
 
-            // check if empty (not logged in)
+            // return if empty (not logged in)
             if (turl.Length == 0)
             {
                 Console.WriteLine($"{Tag} empty og:image -- not logged in");
-
-                
                 return "";
             }
 
@@ -1134,7 +1138,7 @@ namespace InstaLoaderMaui
                     if (match.Success)
                     {
                         // TODO handle videos, non-JPGs
-                        if (match.Value.Contains(".jpg?"))
+                        if (match.Value.Contains(".jpg?") || match.Value.Contains(".mp4?"))
                         {
                             // format
                             var url = match.Value;
@@ -1143,12 +1147,19 @@ namespace InstaLoaderMaui
                             url = url.Replace("\u0025", "%");
                             url = url.Replace("\u0026", "&");
                             url = url.Replace("\\\\", "");
+                            url = url.Replace("&amp;", "&");
+                            // trim trailing slash
+                            if (url.EndsWith('\\'))
+                            {
+                                url = url.Substring(0, url.Length - 1);
+                            }
 
-                            // prevent duplicates
+                            // filter duplicates & unwanted resolutions
                             if (!urls.Contains(url) 
                                 && !url.Contains("320x320") 
                                 && !url.Contains("640x640")
-                                && !url.Contains("150x150"))
+                                && !url.Contains("150x150")
+                                && !url.Contains("BaseURL"))
                             {
                                 urls.Add(url);
                             }
