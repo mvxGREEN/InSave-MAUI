@@ -91,20 +91,17 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
             {
                 Console.WriteLine($"{Tag}: received data from new intent: {data}");
 
-                Task.Run(async () =>
+                ResetVars();
+                MainPage mp = (MainPage)Shell.Current.CurrentPage;
+                mp.ClearTextfield();
+                // give ontextchanged handler time to call showEmptyUI
+                //await Task.Delay(250);
+                string SharedText = data.ToString();
+                TextField mTextField = (TextField)mp.FindByName("main_textfield");
+                if (mTextField != null)
                 {
-                    //ResetVars();
-                    MainPage mp = (MainPage)Shell.Current.CurrentPage;
-                    await mp.ClearTextfield();
-                    // give ontextchanged handler time to call showEmptyUI
-                    await Task.Delay(250);
-                    string SharedText = data.ToString();
-                    TextField mTextField = (TextField)mp.FindByName("main_textfield");
-                    if (mTextField != null)
-                    {
-                        mTextField.Text = SharedText;
-                    }
-                });
+                    mTextField.Text = SharedText;
+                }
             }
         }
 
@@ -491,7 +488,7 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
                     string purchaseProductId = purchase.Products[0];
                     Log.Info(Tag, "found purchase product id: " + purchaseProductId);
 
-                    if (purchaseProductId == "remove_ads_subs")
+                    if (purchaseProductId == "instaloader_gold")
                     {
                         if (purchase.PurchaseState != PurchaseState.Purchased)
                         {
@@ -520,7 +517,7 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
                             .SetProductList(
                                     ImmutableList.Create(
                                             QueryProductDetailsParams.Product.NewBuilder()
-                                                    .SetProductId("remove_ads_subs")
+                                                    .SetProductId("instaloader_gold")
                                                     .SetProductType(BillingClient.ProductType.Subs)
                                                     .Build()))
                             .Build();
@@ -631,29 +628,25 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
 
     public void OnPurchasesUpdated(BillingResult billingResult, IList<Purchase>? purchases)
     {
-        Console.WriteLine($"{Tag}: OnPurchasesUpdated");
-
         var billingResponseCode = billingResult.ResponseCode;
-        Log.Info(Tag, "billing response code: " + billingResponseCode);
+        Console.WriteLine($"{Tag}: OnPurchasesUpdated  billingResponseCode={billingResponseCode}");
 
         if (billingResult.ResponseCode == BillingResponseCode.Ok && purchases != null)
         {
             foreach (Purchase purchase in purchases)
             {
-                Log.Info(Tag, "purchase found!");
-
                 string purchaseProductId = purchase.Products[0];
-                Log.Info(Tag, "found purchase product id: " + purchaseProductId);
+                Console.WriteLine($"{Tag} purchase found!  purchaseProductId={purchaseProductId} purchase.PurchaseState={purchase.PurchaseState}");
 
-                if (purchaseProductId == "remove_ads_subs")
+                if (purchaseProductId == "instaloader_gold")
                 {
                     if (purchase.PurchaseState != PurchaseState.Purchased)
                     {
-                        Log.Warn(Tag, "purchase != purchased");
+                        Console.WriteLine($"{Tag} ");
                     }
                     else if (!purchase.IsAcknowledged)
                     {
-                        Log.Info(Tag, "purchase == purchased; IsAcknowledged == false");
+                        Console.WriteLine($"{Tag} purchase.IsAcknowledged={purchase.IsAcknowledged}");
 
                         HandlePurchase(purchase);
                     }
@@ -662,13 +655,13 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
         }
         else
         {
-            Log.Info(Tag, "no purchases found");
+            Console.WriteLine($"{Tag} no purchases found");
         }
     }
 
     public void HandlePurchase(Purchase purchase)
     {
-        Log.Info(Tag, "HandlePurchase");
+        Console.WriteLine($"{Tag} HandlePurchase");
 
         AcknowledgePurchaseParams acknowledgePurchaseParams = AcknowledgePurchaseParams
                 .NewBuilder()
@@ -734,21 +727,19 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
         }
     }
 
-    // BROADCAST RECEIVER
+    // FINISH RECEIVER
     [BroadcastReceiver(Enabled = true, Exported = false)]
     public class FinishReceiver : BroadcastReceiver
     {
         string Tag = nameof(FinishReceiver);
         public override void OnReceive(Context context, Intent intent)
         {
-            Log.Info(Tag, "OnReceive");
-
             // log event
             try
             {
                 Bundle bundle = new Bundle();
                 bundle.PutString("input", "finish");
-                bundle.PutString("app_name", "spotiflyer");
+                bundle.PutString("app_name", "instaloader");
                 FirebaseAnalytics.GetInstance((MainActivity)Platform.CurrentActivity).LogEvent("input_finish", bundle);
             }
             catch (Exception)
@@ -805,7 +796,7 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
     private static async Task ScanDownload(string filepath)
     {
         // scan media file
-        Console.WriteLine($"{Tag} scanning new media file at: MFilePath={filepath}");
+        Console.WriteLine($"{Tag} scanning new media file at MFilePath={filepath}");
         Android.Net.Uri uri = Android.Net.Uri.Parse("file://" + filepath);
         Intent scanFileIntent = new Intent(Intent.ActionMediaScannerScanFile, uri);
         MainActivity.ActivityCurrent.SendBroadcast(scanFileIntent);

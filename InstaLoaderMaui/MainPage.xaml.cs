@@ -5,7 +5,6 @@ using Firebase;
 using Microsoft.Maui.Handlers;
 using Android.Webkit;
 using Android.App;
-using Android.Text;
 using Android.Util;
 
 using Plugin.MauiMTAdmob;
@@ -15,7 +14,6 @@ using Android.Views.InputMethods;
 using Android.OS;
 using AndroidHUD;
 using Firebase.Analytics;
-using Green.Mobileapps.Instaloader;
 
 namespace InstaLoaderMaui
 {
@@ -26,12 +24,11 @@ namespace InstaLoaderMaui
         public Microsoft.Maui.Controls.WebView pwv;
 
         private uint ANIM_LENGTH = 400;
-        private readonly string INPUT_REGEX = "^$|((?:https?:\\/\\/)((?:www\\.)|(?:m\\.))?instagram\\.com\\/)";
+        private readonly string INPUT_REGEX = "^$|(?:instagram\\.com\\/)";
         public static readonly string UA_DESKTOP_CHROME = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
            UA_DESKTOP_OPERA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 OPR/119.0.0.0",
             UA_MOBILE_CHROME = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Mobile Safari/537.36";
 
-        public static InstaLoader MInstaLoader;
         public static string AbsPathDocs = "";
         public static string AbsPathDocsTemp = "";
         public static string MInput = "";
@@ -263,14 +260,12 @@ namespace InstaLoaderMaui
             MIsNotGold = !Preferences.Default.Get("IS_GOLD", false);
             Console.WriteLine($"{Tag}, IS_GOLD={!MIsNotGold}");
 
-
             // init firebase
             FirebaseApp.InitializeApp(MainActivity.ActivityCurrent);
             // FirebaseAnalytics.GetInstance(MainActivity.ActivityCurrent);
 
             // init admob
             MainActivity.ActivityCurrent.LoadAdmob();
-
 
             // prepare destination file dirs
             PrepareFileDirs();
@@ -293,26 +288,18 @@ namespace InstaLoaderMaui
         public static void PrepareFileDirs()
         {
             Console.WriteLine($"{Tag}: {nameof(PrepareFileDirs)}");
-
-            // init InstaLoader
-            MInstaLoader = new InstaLoader(Android.App.Application.Context);
-
-            // set destination paths
             AbsPathDocs = Path.Combine(Android.OS.Environment.ExternalStorageDirectory.AbsolutePath, Android.OS.Environment.DirectoryDocuments);
             AbsPathDocsTemp = AbsPathDocs + "/temp";
-
-            // prepare destination file dirs
+            // docs directory
             Java.IO.File files = new Java.IO.File(AbsPathDocs);
             files.SetWritable(true);
             Directory.CreateDirectory(Path.GetDirectoryName(AbsPathDocs));
-
-            // prepare temp dir
+            // temp directory
             Java.IO.File temp_files = new Java.IO.File(AbsPathDocsTemp);
             temp_files.SetWritable(true);
             Directory.CreateDirectory(Path.GetDirectoryName(AbsPathDocsTemp));
-
-            Console.WriteLine($"{Tag}: {nameof(PrepareFileDirs)} AbsPathDocs={AbsPathDocs} AbsPathDocsTemp={AbsPathDocsTemp}");
         }
+
 
         public static void ResetVars()
         {
@@ -332,7 +319,7 @@ namespace InstaLoaderMaui
         // BILLING 
         public void UpdateUpgradeItem()
         {
-            Console.WriteLine($"{Tag} UpdateUpgradeItem()\nMIsNotGold={MIsNotGold}");
+            Console.WriteLine($"{Tag} UpdateUpgradeItem() MIsNotGold={MIsNotGold}");
             if (MIsNotGold)
             {
                 // white toolbar item
@@ -349,29 +336,25 @@ namespace InstaLoaderMaui
             }
         }
 
-        
-
         // USER INTERFACE
         public async Task ShowEmptyUI()
         {
             Console.WriteLine($"{Tag}: ShowEmptyUI");
-
             ResetVars();
             UpdateUpgradeItem();
 
             // init webview
             var pmv = (Microsoft.Maui.Controls.WebView)FindByName("preview_webview");
-            //pmv.IsEnabled = false;
             pmv.IsVisible = false;
 
             // set width cookie
             CookieManager.Instance.SetCookie("https://www.instagram.com/?hl=en", "wd=1680x881");
             CookieManager.Instance.SetCookie(MInput, "wd=1680x881");
 
-            // hide buttons
-            ButtonView finishBtn = (ButtonView)FindByName("finish_btn");
+            // clear ui
             ButtonView dlBtn = (ButtonView)FindByName("dl_btn");
             dlBtn.Opacity = 0.0;
+            ButtonView finishBtn = (ButtonView)FindByName("finish_btn");
             finishBtn.Opacity = 0.0;
             finishBtn.IsVisible = false;
             ((Image)FindByName("preview_img")).Opacity = 0.0;
@@ -383,69 +366,16 @@ namespace InstaLoaderMaui
 
         public async Task ShowPreparingUI()
         {
-            Console.WriteLine($"{Tag}: ShowPreparingUI");
-
             HideKeyboard();
 
             // change progress message
             MMessageProgress = "Loading…";
 
-            // show interstitial if not gold
-
-            if (MIsNotGold)
-            {
-                bool IsInterLoaded = CrossMauiMTAdmob.Current.IsInterstitialLoaded();
-
-
-                // show or load interstitial
-                if (IsInterLoaded)
-                {
-                    MFailedShowInter = false;
-                    // log event
-                    try
-                    {
-                        Bundle b = new Bundle();
-                        b.PutString("admob", "show_interstitial");
-                        b.PutBoolean("is_loaded", IsInterLoaded);
-                        b.PutString("app_name", "instaloader");
-                        FirebaseAnalytics.GetInstance((MainActivity)Platform.CurrentActivity).LogEvent("admob_show_inter", b);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine($"{Tag} failed to log event: {e.Message}");
-                    }
-
-                    // show interstitial once every four runs
-                    if (((successfulRuns+1) % 4) == 0)
-                    {
-                        CrossMauiMTAdmob.Current.ShowInterstitial();
-                    }
-                }
-                else
-                {
-                    Log.Error(Tag, "interstitial not loaded!");
-
-                    MFailedShowInter = true;
-
-                    /* log event
-                    try
-                    {
-                        Bundle bundle = new Bundle();
-                        bundle.PutString("admob", "failed_show");
-                        bundle.PutString("ad_type", "interstitial");
-                        bundle.PutString("app_name", "instaloader");
-                        FirebaseAnalytics.GetInstance((MainActivity)Platform.CurrentActivity).LogEvent("admob_failed_show", bundle);
-                    }
-                    catch (Exception)
-                    {
-                        Console.WriteLine($"{Tag} failed to log event");
-                    }
-                    */
-                }
-                // load next interstitial
-                CrossMauiMTAdmob.Current.LoadInterstitial(admobIdInter);
-            }
-
+            // clear ui
+            ButtonView finishBtn = (ButtonView)FindByName("finish_btn");
+            finishBtn.Opacity = 0.0;
+            finishBtn.IsVisible = false;
+            ((Frame)FindByName("downloader_frame")).Opacity = 0.0;
 
             // show indeterminate progress ring
             ProgressRing pr = (ProgressRing)FindByName("progress_ring");
@@ -456,8 +386,6 @@ namespace InstaLoaderMaui
 
         public async Task ShowPreviewUI()
         {
-            Console.WriteLine($"{Tag}: ShowPreviewUI MThumbnailUrl={MThumbnailUrl}");
-
             // hide finish button
             ButtonView finishBtn = (ButtonView)FindByName("finish_btn");
             finishBtn.Opacity = 0.0;
@@ -472,64 +400,20 @@ namespace InstaLoaderMaui
 
             // hide progress ring
             MMessageProgress = "";
+            ProgressRing pr = (ProgressRing)FindByName("progress_ring");
+            pr.FadeTo(0.0, 1000);
+            await ((Label)FindByName("progress_label")).FadeTo(0.0, 1000);
+
             ((ProgressRing)FindByName("progress_ring")).Opacity = 0.0;
             ((Label)FindByName("progress_label")).Opacity = 0.0;
 
             // increase thumbnail opacity
+            await ((Image)FindByName("preview_img")).FadeTo(1.0, ANIM_LENGTH);
             ((Image)FindByName("preview_img")).Opacity = 1.0;
         }
 
         public async Task ShowDownloadingUI()
         {
-            Console.WriteLine($"{Tag}: ShowDownloadingUI");
-
-
-            if (MFailedShowInter)
-            {
-                // show or load interstitial
-                if (CrossMauiMTAdmob.Current.IsInterstitialLoaded())
-                {
-                    MFailedShowInter = false;
-
-                    // log event
-                    try
-                    {
-                        Bundle b = new Bundle();
-                        b.PutString("admob", "show_interstitial");
-                        b.PutBoolean("is_loaded", true);
-                        b.PutString("app_name", "instaloader");
-                        FirebaseAnalytics.GetInstance((MainActivity)Platform.CurrentActivity).LogEvent("admob_show_inter", b);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine($"{Tag} failed to log event: {e.Message}");
-                    }
-
-                    CrossMauiMTAdmob.Current.ShowInterstitial();
-                }
-            }
-            else
-            {
-                Log.Error(Tag, "interstitial not loaded!");
-
-                MFailedShowInter = true;
-
-                // log event
-                try
-                {
-                    Bundle bundle = new Bundle();
-                    bundle.PutString("admob", "failed_show");
-                    bundle.PutBoolean("is_loaded", false);
-                    bundle.PutString("ad_type", "interstitial");
-                    bundle.PutString("app_name", "instaloader");
-                    FirebaseAnalytics.GetInstance((MainActivity)Platform.CurrentActivity).LogEvent("admob_failed_show", bundle);
-                }
-                catch (Exception)
-                {
-                    Console.WriteLine($"{Tag} failed to log event");
-                }
-            }
-
             // change progress message
             MMessageProgress = "Downloading…";
 
@@ -556,53 +440,52 @@ namespace InstaLoaderMaui
         {
             Console.WriteLine($"{Tag}: ShowFinishUI");
 
-            // count successful runs
+            // increment successful runs
             int runs = 1;
             if (Preferences.Default.ContainsKey("SUCCESSFUL_RUNS"))
             {
                 runs += Preferences.Default.Get("SUCCESSFUL_RUNS", 0);
             }
             successfulRuns = runs;
-            Console.WriteLine($"{Tag} SUCCESSFUL_RUNS={runs}");
             Preferences.Default.Set("SUCCESSFUL_RUNS", runs);
+            Console.WriteLine($"{Tag} SUCCESSFUL_RUNS={runs}");
 
-            // show rate fragment, sometimes
-            if (MIsNotGold && (successfulRuns == 1 || successfulRuns % 3 == 0))
+            // sometimes show dialog
+            if (MIsNotGold && (successfulRuns % 4 == 0))
             {
+                // show rate
                 OpenFragment("Rate");
+            } else if (MIsNotGold && (successfulRuns % 4 == 2))
+            {
+                // show upgrade
+                OpenFragment("Upgrade");
             }
 
             // show success message
             MMessageToast = $"Saved! In {AbsPathDocs}";
-
             AndHUD.Shared.ShowSuccess(MainActivity.ActivityCurrent, MMessageToast, MaskType.Black, TimeSpan.FromMilliseconds(2500));
 
-
+            // hide progress
             ProgressRing prd = (ProgressRing)FindByName("progress_ring_dlr");
-            ButtonView finishBtn = (ButtonView)FindByName("finish_btn");
-
-            // hide downloading UI
-            ((Image)FindByName("preview_img")).FadeTo(0.85, ANIM_LENGTH);
             prd.FadeTo(0.0, ANIM_LENGTH);
             ((ProgressRing)FindByName("progress_ring")).FadeTo(0.0, ANIM_LENGTH);
             await ((Label)FindByName("progress_label")).FadeTo(0.0, ANIM_LENGTH);
+            prd.IsVisible = false;
 
             // show finish ui
-            prd.IsVisible = false;
+            ((Image)FindByName("preview_img")).FadeTo(0.9, ANIM_LENGTH);
+            ButtonView finishBtn = (ButtonView)FindByName("finish_btn");
             finishBtn.IsVisible = true;
             finishBtn.FadeTo(1.0, ANIM_LENGTH);
         }
         public void HideKeyboard()
         {
-
-            // hide keyboard
             var inputMethodManager = MainActivity.ActivityCurrent.GetSystemService(Context.InputMethodService) as InputMethodManager;
             if (inputMethodManager != null && MainActivity.ActivityCurrent is Android.App.Activity)
             {
                 var activity = MainActivity.ActivityCurrent as Android.App.Activity;
                 var token = activity.CurrentFocus?.WindowToken;
                 inputMethodManager.HideSoftInputFromWindow(token, HideSoftInputFlags.None);
-
                 activity.Window.DecorView.ClearFocus();
             }
 
@@ -623,7 +506,11 @@ namespace InstaLoaderMaui
         private void OnPrivacyPolicyClicked(object sender, EventArgs e)
         {
             Console.WriteLine($"{Tag} OnPrivacyPolicyClicked");
-            // TODO open privacy policy
+
+            // open privacy policy
+            var privacyUrl = "https://mobileapps.green/privacy-policy"; //Add here the url of your application on the store
+            Intent intent = new Intent(Intent.ActionView, Android.Net.Uri.Parse(privacyUrl));
+            MainActivity.ActivityCurrent.StartActivity(intent);
         }
 
         private void OnUpgradeClicked(object sender, EventArgs e)
@@ -670,13 +557,11 @@ namespace InstaLoaderMaui
         {
             Console.WriteLine($"{Tag}: OnRateClicked");
 
-#if ANDROID
             // open listing on google play
             var playStoreUrl = "https://play.google.com/store/apps/details?id=green.mobileapps.instaloader"; //Add here the url of your application on the store
             Intent intent = new Intent(Intent.ActionView, Android.Net.Uri.Parse(playStoreUrl));
             //intent.SetPackage("com.android.vending");
             MainActivity.ActivityCurrent.StartActivity(intent);
-#endif
         }
 
         public void OpenFragment(string title)
@@ -688,7 +573,7 @@ namespace InstaLoaderMaui
             if (title == "Upgrade")
             {
                 MFragmentSubtitle = "InstaLoader Gold";
-                MFragmentBody = "✅  Profiless✅  Fastest download speed\n✅  No more ads!";
+                MFragmentBody = "✅  Profiles\n✅  Collections\n✅  Batch downloads\n✅  No more ads!";
                 MFragmentPositive = "Get It!";
                 MFragmentDismiss = "Nah";
                 ((Label)FindByName("fragment_body")).LineHeight = 1.5;
@@ -738,23 +623,17 @@ namespace InstaLoaderMaui
         private void OnPasteClicked(object sender, EventArgs e)
         {
             Console.WriteLine("OnPasteClicked");
+            ResetVars();
+            ClearTextfield();
 
-            Task.Run(async () =>
-            {
-                //ResetVars();
-                await ClearTextfield();
-                // give ontextchanged handler time to call showEmptyUI
-                await Task.Delay(250);
+            string clip = Clipboard.GetTextAsync().Result;
+            Console.WriteLine("clipboard text: " + clip);
 
-                string clip = Clipboard.GetTextAsync().Result;
-                Console.WriteLine("clipboard text: " + clip);
-
-                TextField mTextField = (TextField)FindByName("main_textfield");
-                mTextField.Text = clip;
-            });
+            TextField mTextField = (TextField)FindByName("main_textfield");
+            mTextField.Text = clip;
         }
 
-        public async Task ClearTextfield()
+        public void ClearTextfield()
         {
             TextField mTextField = (TextField)FindByName("main_textfield");
             if (mTextField != null)

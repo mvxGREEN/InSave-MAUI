@@ -11,31 +11,37 @@
 
     <!-- TOOLBAR -->
     <ContentPage.ToolbarItems>
-        <!-- TODO put back upgrade icon
+        <!-- UPGRADE -->
         <ToolbarItem x:Name="upgrade_item"
-                 Text="Upgrade"
-                 Clicked="OnUpgradeClicked"
-                 IsEnabled="True">
+             Text="Upgrade"
+             Clicked="OnUpgradeClicked"
+             IsEnabled="True">
             <ToolbarItem.IconImageSource>
                 <FontImageSource x:Name="upgrade_fontimagesource"
-                 FontFamily="FASolid" 
-                 Color="{AppThemeBinding Dark={StaticResource PointEight}, Light={StaticResource DarkPointEight}}"  
-                 Glyph="{x:Static fa:Solid.Gem}"/>
+                     FontFamily="FASolid" 
+                     Color="{AppThemeBinding Dark={StaticResource PointEight}, Light={StaticResource DarkPointEight}}"  
+                     Glyph="{x:Static fa:Solid.Gem}"/>
             </ToolbarItem.IconImageSource>
         </ToolbarItem>
         <ToolbarItem x:Name="upgrade_secondary_item"
              Order="Secondary"
              Text="Upgrade"
              Clicked="OnUpgradeClicked" />
-        -->
+        <!-- RATE -->
         <ToolbarItem x:Name="rate_item"
              Order="Secondary"
              Text="Rate"
              Clicked="OnRateClicked" />
+        <!-- HELP -->
         <ToolbarItem x:Name="help_item"
              Order="Secondary"
              Text="Help"
              Clicked="OnHelpClicked" />
+        <!-- PRIVACY -->
+        <ToolbarItem x:Name="privacy_item"
+             Order="Secondary"
+             Text="Privacy"
+             Clicked="OnPrivacyPolicyClicked" />
     </ContentPage.ToolbarItems>
 
     <AbsoluteLayout>
@@ -50,7 +56,7 @@
                             ClearButtonVisibility="WhileEditing"
                             TextChanged="OnTextChanged"
                             Completed="OnTextCompleted">
-                    <validation:RegexValidation Pattern="^$|((?:https?:\/\/)((?:www\.)|(?:m\.))?instagram\.com\/)" Message="Please paste an instagram link." />
+                    <validation:RegexValidation Pattern="^$|(?:instagram\.com\/)" Message="Please copy an Instagram link" />
                     <!-- PASTE BUTTON -->
                     <material:TextField.Attachments>
                         <material:ButtonView>

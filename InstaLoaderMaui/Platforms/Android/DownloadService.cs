@@ -2,10 +2,6 @@
 using Android.Content;
 using Android.OS;
 using Android.Runtime;
-using Green.Mobileapps.Instaloader;
-using Android.Util;
-using Android.Content;
-using Android.Preferences;
 
 namespace InstaLoaderMaui.Platforms.Android
 {
@@ -15,9 +11,9 @@ namespace InstaLoaderMaui.Platforms.Android
         private static string Tag = "DownloadService";
 
         public const int NOTIFICATION_ID = 3699;
-        const string channelId = "spotiflyer_channel";
-        const string channelName = "SpotiFlyer";
-        const string channelDescription = "SpotiFlyer's channel for notifications.";
+        const string channelId = "instaloader_channel";
+        const string channelName = "InstaLoader";
+        const string channelDescription = "InstaLoader's channel for notifications.";
         const string notificationTitle = "Downloading…";
 
         int max_progress = 100;
@@ -48,7 +44,7 @@ namespace InstaLoaderMaui.Platforms.Android
                 Task.Run(async () =>
                 {
                     // start download task
-                    await Downloader.DownloadPost(MainPage.MInstaLoader, MainPage.IgId, MainPage.AbsPathDocs);
+                    //await Downloader.DownloadPost(MainPage.MInstaLoader, MainPage.IgId, MainPage.AbsPathDocs);
                 });
 
             }
