@@ -520,9 +520,9 @@ namespace InstaLoaderMaui
             {
                 OnRateClicked();
             }
-            else if (MFragmentPositive == "InstaLoader")
+            else if (MFragmentPositive == "Get App")
             {
-                OnRateClicked();
+                OnGetAppClicked("VscoLoader");
             }
             else
             {
@@ -537,13 +537,21 @@ namespace InstaLoaderMaui
 
         private void OnRateClicked()
         {
-            Console.WriteLine($"{Tag}: OnRateClicked");
-
-            // open listing on google play
             var playStoreUrl = "https://play.google.com/store/apps/details?id=green.mobileapps.instaloader"; //Add here the url of your application on the store
             Intent intent = new Intent(Intent.ActionView, Android.Net.Uri.Parse(playStoreUrl));
             //intent.SetPackage("com.android.vending");
             MainActivity.ActivityCurrent.StartActivity(intent);
+        }
+
+        private void OnGetAppClicked(string app_name)
+        {
+            if (app_name.Equals("VscoLoader"))
+            {
+                var playStoreUrl = "https://play.google.com/store/apps/details?id=com.xxxgreen.mvx.downloader4vsco"; //Add here the url of your application on the store
+                Intent intent = new Intent(Intent.ActionView, Android.Net.Uri.Parse(playStoreUrl));
+                MainActivity.ActivityCurrent.StartActivity(intent);
+            }
+            
         }
 
         public void OpenFragment(string title)
@@ -560,12 +568,12 @@ namespace InstaLoaderMaui
             }
             else if (title == "VscoLoader")
             {
-                /* TODO fill vscoloader ad views
-                MFragmentSubtitle = "How to Use InstaLoader";
-                MFragmentBody = "➊  Copy an Instagram link\n    ⓘ  \"Share\" > \"Copy link\"\n➋  Tap ⚡ (or paste link into search bar)\n➌  Tap ⬇ when finished loading\n    ⓘ  Downloaded files are in documents folder";
+                MFragmentSubtitle = "Downloader for VSCO";
+                MFragmentBody = "Enjoying InstaLoader?\n\nMaybe you'll like VscoLoader too!";
+                MFragmentPositive = "Get App";
+                MFragmentDismiss = "Nah";
                 ((Label)FindByName("fragment_body")).LineHeight = 1.25;
                 ((HorizontalStackLayout)FindByName("fragment_btn_layout")).IsVisible = false;
-                 */
             }
             else if (title == "Help")
             {
