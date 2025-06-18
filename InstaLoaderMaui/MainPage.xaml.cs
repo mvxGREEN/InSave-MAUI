@@ -11,6 +11,11 @@ using Android.Views.InputMethods;
 using Android.OS;
 using AndroidHUD;
 using Firebase.Analytics;
+using Java.Net;
+using CookieManager = Android.Webkit.CookieManager;
+using System.Net;
+using static Android.Icu.Text.CaseMap;
+using Android.Text;
 
 namespace InstaLoaderMaui
 {
@@ -26,6 +31,7 @@ namespace InstaLoaderMaui
            UA_DESKTOP_OPERA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 OPR/119.0.0.0",
             UA_MOBILE_CHROME = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Mobile Safari/537.36";
         public static readonly string INSTALOADER_URL = "https://play.google.com/store/apps/details?id=green.mobileapps.instaloader";
+        public static readonly string[] CharsToRemove = new string[] { "\"", "=", "\\", ":", "*", "?", "<", ">", "|", ".", "#" };
 
         public static string AbsPathDocs = "";
         public static string AbsPathDocsTemp = "";
@@ -41,8 +47,8 @@ namespace InstaLoaderMaui
         public static string admobIdInterReal = "ca-app-pub-7417392682402637/1763043737";
         public static string admobIdBannerTest = "ca-app-pub-3940256099942544/9214589741";
         public static string admobIdBannerReal = "ca-app-pub-7417392682402637/9820437660";
-        public static string admobIdInter = admobIdInterTest;
-        public string mAdmobIdBanner = admobIdBannerTest;
+        public static string admobIdInter = admobIdInterReal;
+        public string mAdmobIdBanner = admobIdBannerReal;
         public string MAdmobIdBanner
         {
             get { return mAdmobIdBanner; }
@@ -347,8 +353,10 @@ namespace InstaLoaderMaui
             CookieManager.Instance.SetCookie(MInput, "wd=1680x881");
 
             // clear ui
+            ((Frame)FindByName("downloader_frame")).Opacity = 0.0;
             ButtonView dlBtn = (ButtonView)FindByName("dl_btn");
             dlBtn.Opacity = 0.0;
+            dlBtn.IsVisible = false;
             ButtonView finishBtn = (ButtonView)FindByName("finish_btn");
             finishBtn.Opacity = 0.0;
             finishBtn.IsVisible = false;
@@ -356,21 +364,24 @@ namespace InstaLoaderMaui
             ((ButtonView)FindByName("dl_btn")).Opacity = 0.0;
             ((ProgressRing)FindByName("progress_ring")).Opacity = 0.0;
             ((Label)FindByName("progress_label")).Opacity = 0.0;
-            ((Frame)FindByName("downloader_frame")).Opacity = 0.0;
+            
         }
 
-        public async Task ShowPreparingUI()
+        public async Task ShowLoadingUI()
         {
             HideKeyboard();
 
             // change progress message
             MMessageProgress = "Loading…";
 
-            // clear ui
+            // clear downloader views
+            ((Frame)FindByName("downloader_frame")).Opacity = 0.0;
+            ButtonView dlBtn = (ButtonView)FindByName("dl_btn");
+            dlBtn.Opacity = 0.0;
+            dlBtn.IsVisible = false;
             ButtonView finishBtn = (ButtonView)FindByName("finish_btn");
             finishBtn.Opacity = 0.0;
             finishBtn.IsVisible = false;
-            ((Frame)FindByName("downloader_frame")).Opacity = 0.0;
 
             // show indeterminate progress ring
             ProgressRing pr = (ProgressRing)FindByName("progress_ring");
@@ -445,14 +456,14 @@ namespace InstaLoaderMaui
             Preferences.Default.Set("SUCCESSFUL_RUNS", runs);
             Console.WriteLine($"{Tag} SUCCESSFUL_RUNS={runs}");
 
-            // sometimes show popup fragment
+            // sometimes show popup
             int cycle = successfulRuns % 6;
-            if (MIsNotGold && (cycle == 0))
+            if (MIsNotGold && (cycle == 2))
             {
                 OpenFragment("Rate");
-            } else if (MIsNotGold && (cycle == 2))
+            } else if (MIsNotGold && (cycle == 3))
             {
-                OpenFragment("Upgrade");
+                // OpenFragment("Upgrade");
             } else if (MIsNotGold && (cycle == 4))
             {
                 OpenFragment("VscoLoader");
@@ -573,16 +584,16 @@ namespace InstaLoaderMaui
             else if (title == "VscoLoader")
             {
                 MFragmentSubtitle = "Downloader for VSCO";
-                MFragmentBody = "Enjoying InstaLoader?\n\nMaybe you'll like VscoLoader too!";
+                MFragmentBody = "Enjoying InstaLoader?\nTry out VscoLoader!\n\nAd by Green Mobile";
                 MFragmentPositive = "Get App";
                 MFragmentDismiss = "Nah";
                 ((Label)FindByName("fragment_body")).LineHeight = 1.25;
-                ((HorizontalStackLayout)FindByName("fragment_btn_layout")).IsVisible = false;
+                ((HorizontalStackLayout)FindByName("fragment_btn_layout")).IsVisible = true;
             }
             else if (title == "Help")
             {
                 MFragmentSubtitle = "How to Use InstaLoader:";
-                MFragmentBody = "➊  Copy an Instagram link\n  ⓘ Open Instagram >> \"Share\" >> \"Copy link\"\n➋  Tap ⚡ (paste into search bar)\n➌  Tap download (⬇)\n  ⓘ  Files saved [in Documents]";
+                MFragmentBody = "➊  Copy an Instagram link\n  ⓘ  Open IG >> \"Share\" >> \"Copy link\"\n➋  Tap ⚡ (paste into search bar)\n➌  Tap download (⬇)\n  ⓘ  Files saved [in Documents folder]";
                 ((Label)FindByName("fragment_body")).LineHeight = 1.25;
                 ((HorizontalStackLayout)FindByName("fragment_btn_layout")).IsVisible = false;
             }
@@ -758,7 +769,7 @@ namespace InstaLoaderMaui
             }
 
             // update ui
-            ShowPreparingUI();
+            ShowLoadingUI();
 
             // trim input
             input = input[input.IndexOf("https://")..];
@@ -804,7 +815,7 @@ namespace InstaLoaderMaui
                 IgId = input[(input.LastIndexOf('/') + 1)..];
             }
             MTitle = IgId;
-            Console.WriteLine($"{Tag} input={input} IgId={IgId}");
+            Console.WriteLine($"{Tag} IgId={IgId}");
 
             // check url type
             if (input.Contains("instagram.com/p/"))
@@ -828,14 +839,23 @@ namespace InstaLoaderMaui
                 MInputIsProfile = true;
             }
 
-
             // scrape metadata
             try {
                 Task.Run(async () =>
                 {
                     // get thumbnail
                     MThumbnailUrl = await ExtractThumbnailUrl(input);
-                    Console.WriteLine($"{Tag} gotten thumbnail MThumbnailUrl={MThumbnailUrl}");
+                    Console.WriteLine($"{Tag} MThumbnailUrl={MThumbnailUrl}");
+
+                    // get profile name
+                    //MTitle = await ExtractProfileName(input);
+                    
+                    // use IgId if empty
+                    if (MTitle.Equals("") || MTitle.Contains("_to_set_look"))
+                        MTitle = IgId;
+
+                    // update title
+                    Console.WriteLine($"{Tag} MTitle={MTitle}");
 
                     // show login page in webview
                     MainThread.BeginInvokeOnMainThread(() =>
@@ -953,13 +973,17 @@ namespace InstaLoaderMaui
             }
 
             // print html
+            /*
             IEnumerable<string> htmlChunks = Split(html, 3500);
-
             Console.WriteLine($"{Tag} MAIN HTML:");
             foreach (string v in htmlChunks)
             {
                 Console.WriteLine($"{Tag} {v}");
             }
+            */
+
+            
+            ((MainPage)Shell.Current.CurrentPage).MTitle = IgId;
 
             // extract content from og:image
             string thumbUrl = "";
@@ -1103,8 +1127,6 @@ namespace InstaLoaderMaui
                     pwv.IsVisible = true;
                 }
 
-                
-
                 if (!url.Contains(".com/accounts/login") && !url.Contains("instagram.com/?"))
                 {
                     Console.WriteLine($"{Tag} finished loading content page url={url} MIsAlreadyLoading={MIsAlreadyLoading}");
@@ -1125,13 +1147,14 @@ namespace InstaLoaderMaui
                         }
 
                         // print html
+                        /*
                         IEnumerable<string> htmlChunks = Split(res, 3500);
-
                         Console.WriteLine($"{Tag} JS HTML:");
                         foreach (string v in htmlChunks)
                         {
                             Console.WriteLine($"{Tag} {v}");
                         }
+                        */
 
                         // extract download urls
                         MDownloadUrls = ExtractUrlsFromHtml(res);
@@ -1146,18 +1169,25 @@ namespace InstaLoaderMaui
                             return;
                         }
 
-                        // hide webview
-                        pmv.IsVisible = false;
-                        // show progress ring & preview image
-                        ProgressRing pr = (ProgressRing)mp.FindByName("progress_ring");
-                        Image previewImg = (Image)mp.FindByName("preview_img");
-                        pr.IsVisible = true;
-                        previewImg.IsVisible = true;
+                        string username = IgId;
+                            
+                        // remove sensitive chars
+                        foreach (var c in CharsToRemove)
+                        {
+                            username = username.Replace(c, string.Empty);
+                        }
+                        ((MainPage)Shell.Current.CurrentPage).MTitle = username;
+                        Console.WriteLine($"{Tag} MTitle={((MainPage)Shell.Current.CurrentPage).MTitle}");
+
+                        // update thumbnail
+                        ((MainPage)Shell.Current.CurrentPage).MThumbnailUrl = MDownloadUrls.FirstOrDefault();
 
                         // update ui
-                        ((MainPage)Shell.Current.CurrentPage).MThumbnailUrl = MDownloadUrls.FirstOrDefault();
-                        //((MainPage)Shell.Current.CurrentPage).MTitle = 
-
+                        pmv.IsVisible = false;
+                        //ProgressRing pr = (ProgressRing)mp.FindByName("progress_ring");
+                        //Image previewImg = (Image)mp.FindByName("preview_img");
+                        //pr.IsVisible = true;
+                        //previewImg.IsVisible = true;
                         ((IWebViewHandler)pmv.Handler).PlatformView.SetWebViewClient(null);
                         pmv.IsVisible = false;
                         pmv.IsEnabled = false;

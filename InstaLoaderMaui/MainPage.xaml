@@ -12,27 +12,30 @@
     <!-- TOOLBAR -->
     <ContentPage.ToolbarItems>
         <!-- UPGRADE -->
-        <ToolbarItem x:Name="upgrade_item"
-             Text="Upgrade"
-             Clicked="OnUpgradeClicked"
-             IsEnabled="True">
-            <ToolbarItem.IconImageSource>
-                <FontImageSource x:Name="upgrade_fontimagesource"
-                     FontFamily="FASolid" 
-                     Color="{AppThemeBinding Dark={StaticResource PointEight}, Light={StaticResource DarkPointEight}}"  
-                     Glyph="{x:Static fa:Solid.Gem}"/>
-            </ToolbarItem.IconImageSource>
-        </ToolbarItem>
+        <!-- 
+            <ToolbarItem x:Name="upgrade_item"
+                 Text="Upgrade"
+                 Clicked="OnUpgradeClicked">
+                <ToolbarItem.IconImageSource>
+                    <FontImageSource x:Name="upgrade_fontimagesource"
+                         FontFamily="FASolid" 
+                         Color="{AppThemeBinding Dark={StaticResource PointEight}, Light={StaticResource DarkPointEight}}"  
+                         Glyph="{x:Static fa:Solid.Gem}"/>
+                </ToolbarItem.IconImageSource>
+            </ToolbarItem>
+        -->
         <!-- RATE -->
         <ToolbarItem x:Name="rate_item"
              Order="Secondary"
              Text="Rate"
              Clicked="OnRateClicked" />
         <!-- UPGRADE -->
+        <!-- 
         <ToolbarItem x:Name="upgrade_secondary_item"
              Order="Secondary"
              Text="Upgrade"
-             Clicked="OnUpgradeClicked" />
+             Clicked="OnUpgradeClicked"/>
+        -->
         <!-- PRIVACY -->
         <ToolbarItem x:Name="privacy_item"
              Order="Secondary"
@@ -179,6 +182,9 @@
                             </material:ButtonView>
                             <!-- RING -->
                             <pr:ProgressRing x:Name="progress_ring_dlr"
+                                 WidthRequest="50"
+                                 HeightRequest="50"
+                                 Margin="5"
                                  IsIndeterminate="True"
                                  Smooth="True"
                                  StrokeLineCap="Square"
