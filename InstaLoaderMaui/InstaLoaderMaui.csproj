@@ -27,8 +27,8 @@
 		<ApplicationId>green.mobileapps.instaloader</ApplicationId>
 
 		<!-- Versions -->
-		<ApplicationDisplayVersion>1.2.1</ApplicationDisplayVersion>
-		<ApplicationVersion>3</ApplicationVersion>
+		<ApplicationDisplayVersion>4.4.2</ApplicationDisplayVersion>
+		<ApplicationVersion>4</ApplicationVersion>
 
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
 	</PropertyGroup>
@@ -68,10 +68,10 @@
 		<PackageReference Include="MPowerKit.ProgressRing" Version="1.2.0" />
 
 		<PackageReference Include="AndHUD" Version="2.1.0" />
-		<PackageReference Include="Xamarin.Firebase.Analytics" Version="122.2.0" />
-		<PackageReference Include="Xamarin.Google.UserMessagingPlatform" Version="3.1.0.2" />
-		<PackageReference Include="Xamarin.Android.Google.BillingClient" Version="7.1.1.2" />
-		<PackageReference Include="Plugin.MauiMTAdmob" Version="2.0.0.5" />
+		<PackageReference Include="Xamarin.Firebase.Analytics" Version="122.4.0" />
+		<PackageReference Include="Xamarin.Google.UserMessagingPlatform" Version="3.2.0.2" />
+		<PackageReference Include="Xamarin.Android.Google.BillingClient" Version="7.1.1.4" />
+		<PackageReference Include="Plugin.MauiMTAdmob" Version="2.0.2" />
 	</ItemGroup>
 
 </Project>

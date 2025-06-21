@@ -67,6 +67,34 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
         AskPermissions();
 
         LoadBillingClient();
+
+        // look for intent data
+        Intent intent = this.Intent;
+        if (intent != null)
+        {
+            var data = intent.GetStringExtra(Intent.ExtraText);
+            if (data != null)
+            {
+                Console.WriteLine($"{Tag}: received data from intent: {data}");
+
+                MainPage mp = (MainPage)Shell.Current.CurrentPage;
+                await mp.ClearTextfield();
+                await mp.ShowEmptyUI();
+
+                MIsShared = true;
+
+                string SharedText = data.ToString();
+                TextField mTextField = (TextField)mp.FindByName("main_textfield");
+                if (mTextField != null)
+                {
+                    mTextField.Text = SharedText;
+                }
+                else
+                {
+                    Console.WriteLine($"{Tag} null textfield!");
+                }
+            }
+        }
     }
 
     protected override void OnResume()
@@ -80,8 +108,6 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
     {
         base.OnNewIntent(intent);
 
-        MainPage.MIsShared = true;
-
         if (intent != null)
         {
             Console.WriteLine($"{Tag}: received new intent");
@@ -90,11 +116,12 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
             {
                 Console.WriteLine($"{Tag}: received data from new intent: {data}");
 
-                ResetVars();
                 MainPage mp = (MainPage)Shell.Current.CurrentPage;
                 mp.ClearTextfield();
-                // give ontextchanged handler time to call showEmptyUI
-                //await Task.Delay(250);
+                mp.ShowEmptyUI();
+
+                MainPage.MIsShared = true;
+
                 string SharedText = data.ToString();
                 TextField mTextField = (TextField)mp.FindByName("main_textfield");
                 if (mTextField != null)
@@ -758,24 +785,8 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
                     {
                         Console.WriteLine($"{Tag} found instaloader file: file.Name={file.Name}");
 
-                        // delete txt and json.xz files
-                        if (file.Name.EndsWith(".json.xz") || file.Name.EndsWith(".txt"))
-                        {
-                            if (file.Delete())
-                            {
-                                Console.WriteLine($"{Tag} deleted successfully");
-                            }
-                            else
-                            {
-                                Console.WriteLine($"{Tag} failed to delete");
-                            }
-                        }
-                        // scan media files
-                        else
-                        {
-                            Console.WriteLine($"{Tag} scanning file at: file.AbsolutePath={file.AbsolutePath}");
-                            ScanDownload(file.AbsolutePath);
-                        }
+                        Console.WriteLine($"{Tag} scanning file at: file.AbsolutePath={file.AbsolutePath}");
+                        ScanDownload(file.AbsolutePath);
                     }
                 }
             }
@@ -785,17 +796,19 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
             context.UnregisterReceiver(this);
 
             // update ui
-            MainThread.BeginInvokeOnMainThread(() =>
+            MainThread.BeginInvokeOnMainThread(async () =>
             {
-                ((MainPage)Shell.Current.CurrentPage).ShowFinishUI();
+                await ((MainPage)Shell.Current.CurrentPage).ShowFinishUI();
+                
+                // finish activity if shared
+                if (MIsShared)
+                {
+                    Console.WriteLine($"{Tag} calling FinishAfterTransition()");
+                    Platform.CurrentActivity.FinishAfterTransition();
+                }
             });
 
-            // finish activity if shared
-            if (MIsShared)
-            {
-                Console.WriteLine($"{Tag} calling FinishAfterTransition()");
-                Platform.CurrentActivity.FinishAfterTransition();
-            }
+            
         }
     }
 

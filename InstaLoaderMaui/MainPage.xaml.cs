@@ -4,18 +4,14 @@ using MPowerKit.ProgressRing;
 using Firebase;
 using Microsoft.Maui.Handlers;
 using Android.Webkit;
-using Android.App;
 
 using Android.Content;
 using Android.Views.InputMethods;
 using Android.OS;
 using AndroidHUD;
 using Firebase.Analytics;
-using Java.Net;
 using CookieManager = Android.Webkit.CookieManager;
-using System.Net;
-using static Android.Icu.Text.CaseMap;
-using Android.Text;
+using static Android.Renderscripts.ScriptGroup;
 
 namespace InstaLoaderMaui
 {
@@ -36,7 +32,7 @@ namespace InstaLoaderMaui
         public static string AbsPathDocs = "";
         public static string AbsPathDocsTemp = "";
         public static string MInput = "";
-        public static bool MInputIsProfile = false, MIsShared = false;
+        public static bool MIsProfile = false, MIsShared = false;
         public static string IgId = "";
         public static string MCookies = Preferences.Default.Get("COOKIES", "");
         public static bool MIsAlreadyLoading = false;
@@ -301,13 +297,13 @@ namespace InstaLoaderMaui
             Directory.CreateDirectory(Path.GetDirectoryName(AbsPathDocsTemp));
         }
 
-
         public static void ResetVars()
         {
             Console.WriteLine($"{Tag} ResetVars");
             MainPage mp = (MainPage)Shell.Current.CurrentPage;
             MainPage.MFailedShowInter = false;
-            MInputIsProfile = false;
+            MIsProfile = false;
+            
             MIsShared = false;
             MIsAlreadyLoading = false;
             MDownloadUrls = new List<string>();
@@ -345,6 +341,22 @@ namespace InstaLoaderMaui
             Console.WriteLine($"{Tag}: ShowEmptyUI");
             ResetVars();
             UpdateUpgradeItem();
+            CloseFragment();
+
+            // clear downloader views
+            Console.WriteLine($"{Tag} clearing downloader views");
+
+            ButtonView dlBtn = (ButtonView)FindByName("dl_btn");
+            dlBtn.Opacity = 0.0;
+            dlBtn.IsVisible = false;
+            ButtonView finishBtn = (ButtonView)FindByName("finish_btn");
+            finishBtn.Opacity = 0.0;
+            finishBtn.IsVisible = false;
+            ((Frame)FindByName("downloader_frame")).Opacity = 0.0;
+            ((Image)FindByName("preview_img")).Opacity = 0.0;
+            ((ButtonView)FindByName("dl_btn")).Opacity = 0.0;
+            ((ProgressRing)FindByName("progress_ring")).Opacity = 0.0;
+            ((Label)FindByName("progress_label")).Opacity = 0.0;
 
             // init webview
             var pmv = (Microsoft.Maui.Controls.WebView)FindByName("preview_webview");
@@ -353,20 +365,6 @@ namespace InstaLoaderMaui
             // set width cookie
             CookieManager.Instance.SetCookie("https://www.instagram.com/?hl=en", "wd=1680x881");
             CookieManager.Instance.SetCookie(MInput, "wd=1680x881");
-
-            // clear ui
-            ((Frame)FindByName("downloader_frame")).Opacity = 0.0;
-            ButtonView dlBtn = (ButtonView)FindByName("dl_btn");
-            dlBtn.Opacity = 0.0;
-            dlBtn.IsVisible = false;
-            ButtonView finishBtn = (ButtonView)FindByName("finish_btn");
-            finishBtn.Opacity = 0.0;
-            finishBtn.IsVisible = false;
-            ((Image)FindByName("preview_img")).Opacity = 0.0;
-            ((ButtonView)FindByName("dl_btn")).Opacity = 0.0;
-            ((ProgressRing)FindByName("progress_ring")).Opacity = 0.0;
-            ((Label)FindByName("progress_label")).Opacity = 0.0;
-            
         }
 
         public async Task ShowLoadingUI()
@@ -624,7 +622,7 @@ namespace InstaLoaderMaui
             else if (title == "Downloader for VSCO")
             {
                 MFragmentSubtitle = "VscoLoader";
-                MFragmentBody = "Enjoying InstaLoader?\nTry VscoLoader!\n\n✦ Ad by Green Mobile ✦";
+                MFragmentBody = "Enjoying InstaLoader?\nTry our other app, VscoLoader!\n\n✦ Ad by Green Mobile ✦";
                 MFragmentPositive = "Get App";
                 MFragmentDismiss = "Nah";
                 ((Label)FindByName("fragment_body")).LineHeight = 1.25;
@@ -633,7 +631,7 @@ namespace InstaLoaderMaui
             else if (title == "Downloader for Spotify")
             {
                 MFragmentSubtitle = "SpotiFlyer";
-                MFragmentBody = "Enjoying SoundLoader?\nTry SpotiFlyer!\n\n✦ Ad by Green Mobile ✦";
+                MFragmentBody = "Enjoying InstaLoader?\nTry our other app, SpotiFlyer!\n\n✦ Ad by Green Mobile ✦";
                 MFragmentPositive = "Get App";
                 MFragmentDismiss = "Nah";
                 ((Label)FindByName("fragment_body")).LineHeight = 1.25;
@@ -642,7 +640,7 @@ namespace InstaLoaderMaui
             else if (title == "Downloader for Videos")
             {
                 MFragmentSubtitle = "SaveFrom";
-                MFragmentBody = "Enjoying SoundLoader?\nTry SaveFrom!\n\n✦ Ad by Green Mobile ✦";
+                MFragmentBody = "Enjoying InstaLoader?\nTry our other app, SaveFrom!\n\n✦ Ad by Green Mobile ✦";
                 MFragmentPositive = "Get App";
                 MFragmentDismiss = "Nah";
                 ((Label)FindByName("fragment_body")).LineHeight = 1.25;
@@ -651,7 +649,7 @@ namespace InstaLoaderMaui
             else if (title == "Downloader for Soundcloud")
             {
                 MFragmentSubtitle = "SoundLoader";
-                MFragmentBody = "Enjoying VscoLoader?\nTry SoundLoader!\n\n✦ Ad by Green Mobile ✦";
+                MFragmentBody = "Enjoying InstaLoader?\nTry our other app, SoundLoader!\n\n✦ Ad by Green Mobile ✦";
                 MFragmentPositive = "Get App";
                 MFragmentDismiss = "Nah";
                 ((Label)FindByName("fragment_body")).LineHeight = 1.25;
@@ -694,7 +692,7 @@ namespace InstaLoaderMaui
             mTextField.Text = clip;
         }
 
-        public void ClearTextfield()
+        public async Task ClearTextfield()
         {
             TextField mTextField = (TextField)FindByName("main_textfield");
             if (mTextField != null)
@@ -717,23 +715,15 @@ namespace InstaLoaderMaui
             if ((int)Build.VERSION.SdkInt >= 33)
             {
                 ma.RegisterReceiver(MainActivity.MFinishReceiver, new IntentFilter("69"), ReceiverFlags.Exported);
-                ma.RegisterReceiver(MainActivity.MDownloadReceiver, new IntentFilter(DownloadManager.ActionDownloadComplete), ReceiverFlags.Exported);
+                //ma.RegisterReceiver(MainActivity.MDownloadReceiver, new IntentFilter(DownloadManager.ActionDownloadComplete), ReceiverFlags.Exported);
             }
             else
             {
                 ma.RegisterReceiver(MainActivity.MFinishReceiver, new IntentFilter("69"));
-                ma.RegisterReceiver(MainActivity.MDownloadReceiver, new IntentFilter(DownloadManager.ActionDownloadComplete));
+                //ma.RegisterReceiver(MainActivity.MDownloadReceiver, new IntentFilter(DownloadManager.ActionDownloadComplete));
             }
 
-            Task.Run(async () =>
-            {
-                // download private media
-                for (int i = 0; i < MDownloadUrls.Count; i++)
-                {
-                    Task.Delay(333).Wait();
-                    await DownloadFile(MDownloadUrls[i], i);
-                }
-            });
+            Services.Start();
         }
 
         private void OnTextChanged(object sender, Microsoft.Maui.Controls.TextChangedEventArgs e)
@@ -759,12 +749,15 @@ namespace InstaLoaderMaui
                 if (input.Length == 0)
                 {
                     Console.WriteLine("text field text cleared");
-                    ShowEmptyUI();
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        ShowEmptyUI();
+                    });
                 }
                 else if (lengthDiff > 1 || lengthDiff == 0)
                 {
                     Console.WriteLine("text field text pasted");
-                    LoadInput(input);
+                    HandleInput(input);
                 }
                 else if (lengthDiff == 1)
                 {
@@ -785,11 +778,11 @@ namespace InstaLoaderMaui
         {
             Console.WriteLine("OnTextCompleted");
             string input = ((TextField)FindByName("main_textfield")).Text.ToString();
-            LoadInput(input);
+            HandleInput(input);
         }
 
         // LOAD / DOWNLOAD
-        public void LoadInput(string input)
+        public void HandleInput(string input)
         {
             // check internet connection
             NetworkAccess accessType = Connectivity.Current.NetworkAccess;
@@ -829,11 +822,6 @@ namespace InstaLoaderMaui
 
             // trim input
             input = input[input.IndexOf("https://")..];
-            string domain = input[(input.IndexOf("https://") + 8)..];
-            if (domain.Contains('/'))
-            {
-                domain = domain[..domain.IndexOf('/')];
-            }
             MInput = input + "&size=1";
             Console.WriteLine($"{Tag} MInput={MInput}");
 
@@ -841,11 +829,10 @@ namespace InstaLoaderMaui
             try
             {
                 Bundle bundle = new Bundle();
-                bundle.PutString("input", "load");
+                bundle.PutString("app_name", "instaloader");
+                bundle.PutString("event_name", "input_load");
                 bundle.PutBoolean("input_valid", true);
                 bundle.PutString("input_text", input);
-                bundle.PutString("input_domain", domain);
-                bundle.PutString("app_name", "instaloader");
                 FirebaseAnalytics.GetInstance((MainActivity)Platform.CurrentActivity).LogEvent("input_load", bundle);
             }
             catch (Exception e)
@@ -870,171 +857,76 @@ namespace InstaLoaderMaui
             {
                 IgId = input[(input.LastIndexOf('/') + 1)..];
             }
-            MTitle = IgId;
+            //MTitle = IgId;
             Console.WriteLine($"{Tag} IgId={IgId}");
 
             // check url type
             if (input.Contains("instagram.com/p/"))
             {
                 Console.WriteLine($"{Tag} input is an instagram post");
-                MInputIsProfile = false;
+                MIsProfile = false;
             }
             else if (input.Contains("instagram.com/reel/"))
             {
                 Console.WriteLine($"{Tag} input is an instagram reel");
-                MInputIsProfile = false;
+                MIsProfile = false;
             }
             else if (input.Contains("instagram.com/s/"))
             {
                 Console.WriteLine($"{Tag} input is an instagram story");
-                MInputIsProfile = false;
+                MIsProfile = false;
             }
             else 
             {
                 Console.WriteLine($"{Tag} input is an instagram profile");
-                MInputIsProfile = true;
+                MIsProfile = true;
             }
 
-            // scrape metadata
-            try {
-                Task.Run(async () =>
+            // init webview
+            pwv = (Microsoft.Maui.Controls.WebView)FindByName("preview_webview");
+            pwv.IsEnabled = true;
+
+            // init webview client
+            ((IWebViewHandler)pwv.Handler).PlatformView
+                .SetWebViewClient(new MWebViewClient());
+
+            // check for session id
+            if (MCookies.Contains("sessionid="))
+            {
+                Console.WriteLine($"{Tag} already logged in! MCookies={MCookies}");
+
+                // set webview cookies
+                //CookieManager.Instance.SetCookie(MInput, MCookies);
+
+                // load media page
+                ((IWebViewHandler)pwv.Handler).PlatformView.Post(() =>
                 {
-                    // get thumbnail
-                    MThumbnailUrl = await ExtractThumbnailUrl(input);
-                    Console.WriteLine($"{Tag} MThumbnailUrl={MThumbnailUrl}");
-
-                    // get profile name
-                    //MTitle = await ExtractProfileName(input);
-                    
-                    // use IgId if empty
-                    if (MTitle.Equals("") || MTitle.Contains("_to_set_look"))
-                        MTitle = IgId;
-
-                    // update title
-                    Console.WriteLine($"{Tag} MTitle={MTitle}");
-
-                    // show login page in webview
-                    MainThread.BeginInvokeOnMainThread(() =>
-                    {
-                        // init webview
-                        pwv = (Microsoft.Maui.Controls.WebView)FindByName("preview_webview");
-                        pwv.IsEnabled = true;
-                        ((IWebViewHandler)pwv.Handler).PlatformView
-                            .SetWebViewClient(new MWebViewClient());
-                        
-                        // check for session id
-                        if (MCookies.Contains("sessionid="))
-                        {
-                            Console.WriteLine($"{Tag} already logged in! MCookies={MCookies}");
-
-                            // set webview cookies
-                            //CookieManager.Instance.SetCookie(MInput, MCookies);
-                            
-                            // load media page
-                            ((IWebViewHandler)pwv.Handler).PlatformView.Post(() =>
-                            {
-                                ((IWebViewHandler)pwv.Handler).PlatformView
-                                .LoadUrl(MInput);
-                                // alt: https://www.instagram.com/?flo=true
-                            });
-                        } else
-                        {
-                            Console.WriteLine($"{Tag} not logged in! MCookies={MCookies}");
-
-                            // show webview
-                            pwv.IsVisible = true;
-
-                            // load login page
-                            ((IWebViewHandler)pwv.Handler).PlatformView.Post(() =>
-                            {
-                                ((IWebViewHandler)pwv.Handler).PlatformView
-                                .LoadUrl("https://www.instagram.com/accounts/login/?hl=en");
-                                // alt: https://www.instagram.com/?flo=true
-                            });
-                        }
-
-                        
-                    });
+                    ((IWebViewHandler)pwv.Handler).PlatformView
+                    .LoadUrl(MInput);
+                    // alt: https://www.instagram.com/?flo=true
                 });
             }
-            catch (Exception e)
+            else
             {
-                Console.WriteLine($"{Tag} failed to load url in webview: {e.Message}");
-            }
-            
-        }
+                Console.WriteLine($"{Tag} not logged in! MCookies={MCookies}");
 
-        private static async Task DownloadFile(string url, int index)
-        {
-            Console.WriteLine($"{Tag} DownloadFile url={url} index={index}");
+                // show webview
+                pwv.IsVisible = true;
 
-            // log download event
-            Bundle bundle = new Bundle();
-            bundle.PutString("app_name", "instaloader");
-            bundle.PutString("event_name", "download_file");
-            bundle.PutString("download_url", url);
-            FirebaseAnalytics.GetInstance((MainActivity)Platform.CurrentActivity).LogEvent("input_load", bundle);
-
-            // init download manager
-            DownloadManager downloadManager = (DownloadManager)
-                    MainActivity.ActivityCurrent.GetSystemService(Context.DownloadService);
-            Android.Net.Uri fileUri = Android.Net.Uri.Parse(url);
-
-            // set destination
-            string fileDir = Android.OS.Environment.DirectoryDocuments;
-            string fileExt = ".jpg";
-            if (url.Contains(".mp4"))
-                fileExt = ".mp4";
-            string fileName = ((MainPage)Shell.Current.CurrentPage).MTitle + "_" + index + fileExt;
-            Console.WriteLine($"{Tag} fileName={fileName}");
-
-            // start download
-            DownloadManager.Request request = new DownloadManager.Request(fileUri);
-            request.SetTitle("instaloader");
-            request.SetDescription("");
-            request.SetNotificationVisibility(DownloadVisibility.VisibleNotifyCompleted);
-            request.SetDestinationInExternalPublicDir(fileDir, fileName);
-            downloadManager.Enqueue(request);
-        }
-
-        
-        private void DownloadProfile(string postUrl)
-        {
-            // todo 
-        }
-
-        private void DownloadPost(string postUrl)
-        {
-            Console.WriteLine($"{Tag} DownloadPost postUrl={postUrl}");
-
-            Services.Start();
-        }
-
-        private static async Task<string?> ExtractThumbnailUrl(string inputUrl)
-        {
-            Console.WriteLine($"{Tag} ExtractThumbnailUrl url={inputUrl}");
-            
-            // get html
-            using var httpClient = new HttpClient();
-            var html = await httpClient.GetStringAsync(inputUrl);
-
-            if (html == null || html.Length == 0) {
-                Console.WriteLine($"{Tag} empty html!");
-                return "";
+                // load login page
+                ((IWebViewHandler)pwv.Handler).PlatformView.Post(() =>
+                {
+                    ((IWebViewHandler)pwv.Handler).PlatformView
+                    .LoadUrl("https://www.instagram.com/accounts/login/?hl=en");
+                    // alt: https://www.instagram.com/?flo=true
+                });
             }
 
-            // print html
-            /*
-            IEnumerable<string> htmlChunks = Split(html, 3500);
-            Console.WriteLine($"{Tag} MAIN HTML:");
-            foreach (string v in htmlChunks)
-            {
-                Console.WriteLine($"{Tag} {v}");
-            }
-            */
+        }
 
-            
-            ((MainPage)Shell.Current.CurrentPage).MTitle = IgId;
+        private static string ExtractThumbnailUrl(string html)
+        {
+            Console.WriteLine($"{Tag} ExtractThumbnailUrl");
 
             // extract content from og:image
             string thumbUrl = "";
@@ -1200,14 +1092,38 @@ namespace InstaLoaderMaui
                         }
 
                         // print html
-                        /*
                         IEnumerable<string> htmlChunks = Split(res, 3500);
                         Console.WriteLine($"{Tag} JS HTML:");
                         foreach (string v in htmlChunks)
                         {
                             Console.WriteLine($"{Tag} {v}");
                         }
-                        */
+
+                        // extract thumbnail
+                        mp.MThumbnailUrl = ExtractThumbnailUrl(res);
+                        Console.WriteLine($"{Tag} MThumbnailUrl={mp.MThumbnailUrl}");
+
+                        // extract profile name
+                        string pn = "";
+                        if (res.Contains("og:url"))
+                        {
+                            pn = res[res.IndexOf("og:url")..];
+                            pn = pn[(pn.IndexOf("instagram.com/") +14)..];
+                            pn = pn[..pn.IndexOf('/')];
+                            if (pn.Contains('\\'))
+                            {
+                                pn = pn[..pn.IndexOf('\\')];
+                            }
+                        }
+                        mp.MTitle = pn;
+                        Console.WriteLine($"{Tag} extracted profile name MTitle={mp.MTitle}");
+
+                        Bundle bundle = new Bundle();
+                        bundle.PutString("app_name", "instaloader");
+                        bundle.PutString("event_name", "input_loaded");
+                        bundle.PutString("input_url", url);
+                        bundle.PutString("filename", mp.MTitle);
+                        FirebaseAnalytics.GetInstance((MainActivity)Platform.CurrentActivity).LogEvent("input_load", bundle);
 
                         // extract download urls
                         MDownloadUrls = ExtractUrlsFromHtml(res);
@@ -1221,16 +1137,6 @@ namespace InstaLoaderMaui
                         {
                             return;
                         }
-
-                        string username = IgId;
-                            
-                        // remove sensitive chars
-                        foreach (var c in CharsToRemove)
-                        {
-                            username = username.Replace(c, string.Empty);
-                        }
-                        ((MainPage)Shell.Current.CurrentPage).MTitle = username;
-                        Console.WriteLine($"{Tag} MTitle={((MainPage)Shell.Current.CurrentPage).MTitle}");
 
                         // update thumbnail
                         ((MainPage)Shell.Current.CurrentPage).MThumbnailUrl = MDownloadUrls.FirstOrDefault();

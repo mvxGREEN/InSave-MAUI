@@ -2,13 +2,16 @@
 using Android.Content;
 using Android.OS;
 using Android.Runtime;
+using static InstaLoaderMaui.MainActivity;
 
 namespace InstaLoaderMaui.Platforms.Android
 {
     [Service]
     public class DownloadService : Service, IServiceDownload
     {
-        private static string Tag = "DownloadService";
+        private static string Tag = nameof(DownloadService);
+
+        public static DownloadReceiver MDownloadReceiver = new DownloadReceiver();
 
         public const int NOTIFICATION_ID = 3699;
         const string channelId = "instaloader_channel";
@@ -41,10 +44,16 @@ namespace InstaLoaderMaui.Platforms.Android
 
             if (intent.Action == "START_SERVICE")
             {
+                RegisterReceiver();
+
                 Task.Run(async () =>
                 {
-                    // start download task
-                    //await Downloader.DownloadPost(MainPage.MInstaLoader, MainPage.IgId, MainPage.AbsPathDocs);
+                    // download media
+                    for (int i = 0; i < MainPage.MDownloadUrls.Count; i++)
+                    {
+                        //Task.Delay(333).Wait();
+                        await Instaloader.DownloadFile(MainPage.MDownloadUrls[i], i);
+                    }
                 });
 
             }
@@ -73,6 +82,21 @@ namespace InstaLoaderMaui.Platforms.Android
             Intent stopIntent = new Intent(MainActivity.ActivityCurrent, Class);
             stopIntent.SetAction("STOP_SERVICE");
             MainActivity.ActivityCurrent.StartService(stopIntent);
+        }
+
+        private void RegisterReceiver()
+        {
+            MDownloadReceiver = new DownloadReceiver();
+            if ((int)Build.VERSION.SdkInt >= 33)
+            {
+                //MainActivity.ActivityCurrent.RegisterReceiver(MainActivity.MFinishReceiver, new IntentFilter("69"), Android.Content.ReceiverFlags.Exported);
+                RegisterReceiver(MDownloadReceiver, new IntentFilter(DownloadManager.ActionDownloadComplete), ReceiverFlags.Exported);
+            }
+            else
+            {
+                //MainActivity.ActivityCurrent.RegisterReceiver(MainActivity.MFinishReceiver, new IntentFilter("69"));
+                RegisterReceiver(MDownloadReceiver, new IntentFilter(DownloadManager.ActionDownloadComplete));
+            }
         }
 
         private void RegisterNotification()
@@ -153,5 +177,6 @@ namespace InstaLoaderMaui.Platforms.Android
                .SetContentIntent(pendingIntent)
                .Build();
         }
+
     }
 }
