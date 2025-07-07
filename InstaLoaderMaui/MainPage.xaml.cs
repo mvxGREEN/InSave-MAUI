@@ -321,6 +321,10 @@ namespace InstaLoaderMaui
         public void UpdateUpgradeItem()
         {
             Console.WriteLine($"{Tag} UpdateUpgradeItem() MIsNotGold={MIsNotGold}");
+
+            // todo remove
+            return;
+            
             if (MIsNotGold)
             {
                 // white toolbar item
