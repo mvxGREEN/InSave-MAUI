@@ -603,7 +603,7 @@ namespace InstaLoaderMaui
             MFragmentTitle = title;
             if (title == "Upgrade")
             {
-                MFragmentSubtitle = "Inflact Gold";
+                MFragmentSubtitle = "InFlyer Gold";
                 MFragmentBody = "✅  Profiles\n✅  Collections\n✅  Batch downloads\n✅  No more ads!";
                 MFragmentPositive = "Coming Soon";
                 MFragmentDismiss = "Nah";
@@ -612,14 +612,14 @@ namespace InstaLoaderMaui
             }
             else if (title == "Help")
             {
-                MFragmentSubtitle = "How to Use Inflact:";
+                MFragmentSubtitle = "How to Use InFlyer:";
                 MFragmentBody = "➊  Copy a link\n  ⓘ  Open media >> \"Share\" >> \"Copy link\"\n➋  Tap ⚡ (paste into search bar)\n➌  Tap download (⬇)\n  ⓘ  Files saved [in Documents folder]";
                 ((Label)FindByName("fragment_body")).LineHeight = 1.25;
                 ((HorizontalStackLayout)FindByName("fragment_btn_layout")).IsVisible = false;
             }
             else if (title == "Rate")
             {
-                MFragmentSubtitle = "Inflact";
+                MFragmentSubtitle = "InFlyer";
                 MFragmentBody = "Enjoying the app?\nLet me know!";
                 MFragmentPositive = "Rate";
                 MFragmentDismiss = "Nah";
@@ -629,7 +629,7 @@ namespace InstaLoaderMaui
             else if (title == "Downloader for VSCO")
             {
                 MFragmentSubtitle = "VscoLoader";
-                MFragmentBody = "Enjoying Inflact?\nTry our other app, VscoLoader!\n\n✦ Ad by Green Mobile ✦";
+                MFragmentBody = "Enjoying InFlyer?\nTry our other app, VscoLoader!\n\n✦ Ad by Green Mobile ✦";
                 MFragmentPositive = "Get App";
                 MFragmentDismiss = "Nah";
                 ((Label)FindByName("fragment_body")).LineHeight = 1.25;
@@ -638,7 +638,7 @@ namespace InstaLoaderMaui
             else if (title == "Downloader for Spotify")
             {
                 MFragmentSubtitle = "SpotiFlyer";
-                MFragmentBody = "Enjoying Inflact?\nTry our other app, SpotiFlyer!\n\n✦ Ad by Green Mobile ✦";
+                MFragmentBody = "Enjoying InFlyer?\nTry our other app, SpotiFlyer!\n\n✦ Ad by Green Mobile ✦";
                 MFragmentPositive = "Get App";
                 MFragmentDismiss = "Nah";
                 ((Label)FindByName("fragment_body")).LineHeight = 1.25;
@@ -647,7 +647,7 @@ namespace InstaLoaderMaui
             else if (title == "Downloader for Videos")
             {
                 MFragmentSubtitle = "SaveFrom";
-                MFragmentBody = "Enjoying Inflact?\nTry our other app, SaveFrom!\n\n✦ Ad by Green Mobile ✦";
+                MFragmentBody = "Enjoying InFlyer?\nTry our other app, SaveFrom!\n\n✦ Ad by Green Mobile ✦";
                 MFragmentPositive = "Get App";
                 MFragmentDismiss = "Nah";
                 ((Label)FindByName("fragment_body")).LineHeight = 1.25;
@@ -656,7 +656,7 @@ namespace InstaLoaderMaui
             else if (title == "Downloader for Soundcloud")
             {
                 MFragmentSubtitle = "SoundLoader";
-                MFragmentBody = "Enjoying Inflact?\nTry our other app, SoundLoader!\n\n✦ Ad by Green Mobile ✦";
+                MFragmentBody = "Enjoying InFlyer?\nTry our other app, SoundLoader!\n\n✦ Ad by Green Mobile ✦";
                 MFragmentPositive = "Get App";
                 MFragmentDismiss = "Nah";
                 ((Label)FindByName("fragment_body")).LineHeight = 1.25;
@@ -1077,13 +1077,29 @@ namespace InstaLoaderMaui
                     Console.WriteLine($"{Tag} showing webview...");
                     Microsoft.Maui.Controls.WebView pwv = (Microsoft.Maui.Controls.WebView)mp.FindByName("preview_webview");
                     pwv.IsVisible = true;
+                } else
+                {
+                    MainPage mp = (MainPage)Shell.Current.CurrentPage;
+
+                    // hide webview
+                    Console.WriteLine($"{Tag} hiding webview...");
+                    Microsoft.Maui.Controls.WebView pwv = (Microsoft.Maui.Controls.WebView)mp.FindByName("preview_webview");
+                    pwv.IsVisible = false;
+
+                    // show progress & thumbnail
+                    ProgressRing pr = (ProgressRing)mp.FindByName("progress_ring");
+                    Image previewImg = (Image)mp.FindByName("preview_img");
+                    Label pl = (Label)mp.FindByName("progress_label");
+                    pr.IsVisible = true;
+                    pl.IsVisible = true;
+                    previewImg.IsVisible = true;
                 }
 
                 if (!url.Contains(".com/accounts/login") && !url.Contains("instagram.com/?"))
                 {
                     Console.WriteLine($"{Tag} finished loading content page url={url} MIsAlreadyLoading={MIsAlreadyLoading}");
                     Console.WriteLine($"{Tag} hiding webview...");
-                    
+
                     // get webview
                     MainPage mp = (MainPage)Shell.Current.CurrentPage;
                     var pmv = (Microsoft.Maui.Controls.WebView)mp.FindByName("preview_webview");
@@ -1117,7 +1133,7 @@ namespace InstaLoaderMaui
                         if (res.Contains("og:url"))
                         {
                             pn = res[res.IndexOf("og:url")..];
-                            pn = pn[(pn.IndexOf("instagram.com/") +14)..];
+                            pn = pn[(pn.IndexOf("instagram.com/") + 14)..];
                             pn = pn[..pn.IndexOf('/')];
                             if (pn.Contains('\\'))
                             {
@@ -1151,7 +1167,7 @@ namespace InstaLoaderMaui
                         ((MainPage)Shell.Current.CurrentPage).MThumbnailUrl = MDownloadUrls.FirstOrDefault();
 
                         // hide webview
-                        Console.WriteLine($"{Tag} showing webview...");
+                        Console.WriteLine($"{Tag} hiding webview...");
                         Microsoft.Maui.Controls.WebView pwv = (Microsoft.Maui.Controls.WebView)mp.FindByName("preview_webview");
                         pwv.IsVisible = false;
 
@@ -1167,7 +1183,8 @@ namespace InstaLoaderMaui
                         if (Instaloader.MIsShared)
                         {
                             mp.OnDownloadClicked();
-                        } else
+                        }
+                        else
                         {
                             ((MainPage)Shell.Current.CurrentPage).ShowPreviewUI();
                         }

@@ -17,7 +17,7 @@ public static class Instaloader
         Bundle bundle = new Bundle();
         bundle.PutString("app_name", "instaloader");
         bundle.PutString("event_name", "download_file");
-        bundle.PutString("download_url", url);
+        //bundle.PutString("filename", );
         FirebaseAnalytics.GetInstance((MainActivity)Platform.CurrentActivity).LogEvent("input_load", bundle);
 
         // init download manager
