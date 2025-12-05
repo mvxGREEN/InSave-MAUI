@@ -7,7 +7,6 @@ using InstaLoaderMaui.Platforms.Android;
 #if ANDROID
 using Firebase;
 using Microsoft.Maui.LifecycleEvents;
-using Plugin.MauiMTAdmob;
 #endif
 
 namespace InstaLoaderMaui;
@@ -30,50 +29,6 @@ public static class MauiProgram
                 fonts.AddFontAwesomeIconFonts();
                 fonts.AddMaterialIconFonts();
             });
-
-#if ANDROID
-        builder.UseMauiMTAdmob()
-            .ConfigureLifecycleEvents(events =>
-            {
-                events.AddAndroid(android =>
-                {
-                    android.OnCreate((activity, bundle) =>
-                    {
-                        Console.WriteLine($"{Tag} OnCreate");
-
-                        // init firebase
-                        try
-                        {
-                            FirebaseApp.InitializeApp(activity);
-                        }
-                        catch (System.Exception e)
-                        {
-                            Console.WriteLine($"{Tag} failed to init firebase app");
-                        }
-
-                    });
-                    android.OnResume(activity =>
-                    {
-                        Console.WriteLine($"{Tag} OnResume");
-                    });
-                    android.OnDestroy(activity =>
-                    {
-                        try
-                        {
-                            activity.UnregisterReceiver(MainActivity.MFinishReceiver);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"{Tag} MFinishReceiver already unregistered");
-                        }
-                    });
-                });
-            });
-
-        // dependency injection
-        builder.Services.AddSingleton<MainPage>();
-        builder.Services.AddTransient<IServiceDownload, DownloadService>();
-#endif
 
 #if DEBUG
         builder.Logging.AddDebug();

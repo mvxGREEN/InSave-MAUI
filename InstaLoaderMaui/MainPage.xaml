@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:material="http://schemas.enisn-projects.io/dotnet/maui/uraniumui/material"
              xmlns:fa="clr-namespace:UraniumUI.Icons.FontAwesome;assembly=UraniumUI.Icons.FontAwesome"
-             xmlns:controls="clr-namespace:Plugin.MauiMTAdmob.Controls;assembly=Plugin.MauiMTAdmob"
              xmlns:input="clr-namespace:InputKit.Shared.Controls;assembly=InputKit.Maui"
              xmlns:validation="clr-namespace:InputKit.Shared.Validations;assembly=InputKit.Maui"
              xmlns:pr="clr-namespace:MPowerKit.ProgressRing;assembly=MPowerKit.ProgressRing"
@@ -173,7 +172,7 @@
                                     <ImageButton.Source>
                                         <FontImageSource FontFamily="FASolid"        
                                             Glyph="{x:Static fa:Solid.CircleDown}" 
-                                            Color="{AppThemeBinding Dark={StaticResource PointEightFive}, Light={StaticResource DarkPointEightFive}}"/> 
+                                            Color="{AppThemeBinding Dark={StaticResource PointEightFive}, Light={StaticResource DarkPointEightFive}}"/>
                                     </ImageButton.Source>
                                 </ImageButton>
                             </material:ButtonView>
@@ -207,97 +206,84 @@
                         </StackLayout>
                     </Frame>
                 </AbsoluteLayout>
-
-                <!-- BANNER AD -->
-                <StackLayout x:Name="banner_ad_container" VerticalOptions="End" HorizontalOptions="Center" IsVisible="{Binding MIsNotGold}">
-                    <controls:MTAdView x:Name="banner_ad" AdsId="{Binding MAdmobIdBanner}" AdSize="LargeBanner"/>
-                </StackLayout>
-
             </VerticalStackLayout>
         </ScrollView>
 
-        <!-- FRAGMENT-->
-        <AbsoluteLayout x:Name="fragment_layout"
+        <!-- POPUP-->
+        <AbsoluteLayout 
+            x:Name="fragment_layout"
             AbsoluteLayout.LayoutBounds="0,0,1,1"
             AbsoluteLayout.LayoutFlags="PositionProportional,SizeProportional"
             ZIndex="3"
             IsVisible="false">
             <!-- SHADOW -->
-            <Image x:Name="shadow_image"
-               AbsoluteLayout.LayoutBounds="0,0,1,1"
-               AbsoluteLayout.LayoutFlags="PositionProportional,SizeProportional"
-               BackgroundColor="{AppThemeBinding Dark={StaticResource PointSix}, Light={StaticResource DarkPointSix}}" />
+            <Image 
+                    x:Name="shadow_image"
+                    AbsoluteLayout.LayoutBounds="0,0,1,1"
+                    AbsoluteLayout.LayoutFlags="PositionProportional,SizeProportional"
+                    BackgroundColor="{AppThemeBinding Dark={StaticResource PointSix}, Light={StaticResource DarkPointSix}}" />
             <!-- BORDER -->
             <Frame x:Name="fragment_frame"
-                 BorderColor="{AppThemeBinding Dark={StaticResource White}, Light={StaticResource Black}}"
+                 BorderColor="{AppThemeBinding Dark={StaticResource DarkPointFive}, Light={StaticResource PointFive}}"
                  BackgroundColor="{StaticResource White}"
-                 CornerRadius="10"
+                 CornerRadius="8"
                  ZIndex="1"
-                 Margin="10, 50"
-                 AbsoluteLayout.LayoutBounds="0,0,1,400"
+                 Margin="10,60"
+                 AbsoluteLayout.LayoutBounds="0,0,1,460"
                  AbsoluteLayout.LayoutFlags="PositionProportional,WidthProportional">
                 <Grid>
-                    <StackLayout>
+                    <VerticalStackLayout>
                         <!-- HEADER -->
                         <Grid>
-                            <StackLayout HorizontalOptions="Start">
+                            <VerticalStackLayout HorizontalOptions="Start">
                                 <!-- TITLE -->
-                                <Label x:Name="fragment_title"
+                                <Label 
+                                     x:Name="fragment_title"
                                      Text="{Binding MFragmentTitle}"
+                                     FontAttributes="Bold"
                                      FontSize="Large"
-                                     TextColor="{StaticResource Black}"
-                                     Margin="10,0,0,0"
+                                     TextColor="{StaticResource DarkPointEightFive}"
                                      VerticalTextAlignment="Start"
                                      ZIndex="2" />
                                 <!-- SUBTITLE -->
-                                <Label x:Name="fragment_subtitle"
+                                <Label 
+                                     x:Name="fragment_subtitle"
                                      Text="{Binding MFragmentSubtitle}"
-                                     FontSize="Medium"
-                                     TextColor="{StaticResource DarkPointFive}"
-                                     Margin="10,0,0,0"
+                                     FontAttributes="Italic"
+                                     FontSize="Large"
+                                     TextColor="{StaticResource DarkPointEight}"
                                      VerticalTextAlignment="Start"
                                      ZIndex="2" />
-                            </StackLayout>
-                            <!-- CLOSE -->
-                            <material:ButtonView>
-                                <ImageButton x:Name="close_button"
-                                     Clicked="OnCloseClicked"
-                                     HeightRequest="32"
-                                     WidthRequest="32"
-                                     VerticalOptions="Start"
-                                     HorizontalOptions="End">
-                                    <ImageButton.Source>
-                                        <FontImageSource FontFamily="FASolid" 
-                                             Color="{StaticResource DarkPointEight}"  
-                                             Glyph="{x:Static fa:Solid.CircleXmark}"/>
-                                    </ImageButton.Source>
-                                </ImageButton>
-                            </material:ButtonView>
+                            </VerticalStackLayout>
+
                         </Grid>
 
                         <!-- BODY -->
-                        <Label x:Name="fragment_body"
+                        <Label 
+                             x:Name="fragment_body"
                              Text="{Binding MFragmentBody}"
-                             FontSize="Small"
-                             TextColor="{StaticResource Black}"
+                             FontSize="Body"
+                             TextColor="{StaticResource DarkPointEight}"
                              Margin="20"
                              VerticalTextAlignment="Start"
+                             HorizontalTextAlignment="Start"
                              ZIndex="2"
                              LineHeight="1.5"/>
-                    </StackLayout>
+
+                    </VerticalStackLayout>
 
                     <!-- BUTTONS -->
                     <HorizontalStackLayout x:Name="fragment_btn_layout"
-                                   VerticalOptions="End"
-                                    HorizontalOptions="Center">
+                       VerticalOptions="End"
+                       HorizontalOptions="Center">
                         <!-- DISMISS -->
                         <material:ButtonView>
                             <Button x:Name="dismiss_button"
                                 Clicked="OnCloseClicked"
                                 Text="{Binding MFragmentDismiss}"
                                 BackgroundColor="{StaticResource DarkPointFive}"
-                                FontSize="Medium"
-                                TextColor="{StaticResource White}"
+                                FontSize="Small"
+                                TextColor="{StaticResource GmaGreenWhite}"
                                 HorizontalOptions="Center"/>
                         </material:ButtonView>
                         <!-- POSITIVE -->
@@ -305,16 +291,15 @@
                             <Button x:Name="positive_button"
                                 Clicked="OnPositiveClicked"
                                 Text="{Binding MFragmentPositive}"
-                                FontSize="Medium"
-                                TextColor="{StaticResource White}"
-                                HorizontalOptions="Center"/>
+                                BackgroundColor="{StaticResource GmaGreenDark}"
+                                FontSize="16"
+                                TextColor="{StaticResource GmaGreenWhite}"
+                                HorizontalOptions="Start"/>
                         </material:ButtonView>
                     </HorizontalStackLayout>
                 </Grid>
-
             </Frame>
         </AbsoluteLayout>
-
     </AbsoluteLayout>
 </ContentPage>
 

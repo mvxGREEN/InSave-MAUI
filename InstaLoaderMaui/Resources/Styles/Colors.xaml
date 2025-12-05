@@ -5,13 +5,16 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
 
     <Color x:Key="Primary">#833AB4</Color>
-    <Color x:Key="PrimaryDark">#421D5B</Color>
-    <Color x:Key="PrimaryDarkText">#FFFFFF</Color>
-    <Color x:Key="Secondary">#F7F2FB</Color>
-    <Color x:Key="SecondaryDarkText">#FFFFFF</Color>
-    <Color x:Key="Tertiary">#CBA8E3</Color>
+    <Color x:Key="PrimaryDark">#2d143d</Color>
+    <Color x:Key="PrimaryDarkText">#f7f2fb</Color>
+    <Color x:Key="Secondary">#f7f2fb</Color>
+    <Color x:Key="SecondaryDarkText">#f7f2fb</Color>
+    <Color x:Key="Tertiary">#1f6427</Color>
 
     <Color x:Key="Gold">#D4AF37</Color>
+    <Color x:Key="PrimaryWhite">#f7f2fb</Color>
+    <Color x:Key="GmaGreenDark">#133d18</Color>
+    <Color x:Key="GmaGreenWhite">#fafefb</Color>
 
     <!-- mvx's shadow hexes -->
     <Color x:Key="PointOh">#00000000</Color>
