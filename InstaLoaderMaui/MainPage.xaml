@@ -11,17 +11,22 @@
 
     <!-- TOOLBAR -->
     <ContentPage.ToolbarItems>
-        <!-- UPGRADE 
+        <!-- UPGRADE -->
         <ToolbarItem x:Name="upgrade_item"
-         Text="Upgrade"
-         Clicked="OnUpgradeClicked">
-    <ToolbarItem.IconImageSource>
-        <FontImageSource x:Name="upgrade_fontimagesource"
+                 Text="Upgrade"
+                 Clicked="OnUpgradeClicked"
+                 IsEnabled="True">
+            <ToolbarItem.IconImageSource>
+                <FontImageSource x:Name="upgrade_fontimagesource"
                  FontFamily="FASolid" 
                  Color="{AppThemeBinding Dark={StaticResource PointEight}, Light={StaticResource DarkPointEight}}"  
                  Glyph="{x:Static fa:Solid.Gem}"/>
-    </ToolbarItem.IconImageSource>
-</ToolbarItem>-->
+            </ToolbarItem.IconImageSource>
+        </ToolbarItem>
+        <ToolbarItem x:Name="upgrade_secondary_item"
+             Order="Secondary"
+             Text="Upgrade"
+             Clicked="OnUpgradeClicked" />
         
         <!-- RATE -->
         <ToolbarItem x:Name="rate_item"

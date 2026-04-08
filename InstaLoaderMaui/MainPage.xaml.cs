@@ -527,12 +527,9 @@ namespace InstaLoaderMaui
 
         private void OnUpgradeClicked(object sender, EventArgs e)
         {
-            if (Preferences.Default.ContainsKey("IS_GOLD"))
+            if (MIsNotGold)
             {
-                if (MIsNotGold)
-                {
-                    ShowPopup("Upgrade");
-                }
+                ShowPopup("Upgrade");
             }
         }
 
@@ -561,6 +558,11 @@ namespace InstaLoaderMaui
             {
                 playStoreUrl = "https://play.google.com/store/apps/details?id=com.mvxgreen.downloader4soundcloud";
             }
+            else
+            {
+                Console.WriteLine($"{Tag} OnPurchaseClicked");
+                MainActivity.ActivityCurrent.LaunchBillingFlow("monthly");
+            }
 
             if (playStoreUrl != "")
             {
@@ -588,8 +590,8 @@ namespace InstaLoaderMaui
             if (title == "Upgrade")
             {
                 MFragmentSubtitle = "InSave Gold";
-                MFragmentBody = "✅  Profiles\n✅  Collections\n✅  Batch downloads\n✅  No more ads!";
-                MFragmentPositive = "Coming Soon";
+                MFragmentBody = "✅  Fastest speed\n✅  Ad-Free!";
+                MFragmentPositive = "Get It!";
                 MFragmentDismiss = "Nah";
                 ((Label)FindByName("fragment_body")).LineHeight = 1.5;
                 ((HorizontalStackLayout)FindByName("fragment_btn_layout")).IsVisible = true;

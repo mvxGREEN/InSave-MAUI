@@ -211,7 +211,7 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
                 {
                     if (file.Name.StartsWith(IgId))
                     {
-                        Console.WriteLine($"{Tag} found instaloader file: file.Name={file.Name}");
+                        Console.WriteLine($"{Tag} found insave file: file.Name={file.Name}");
 
                         Console.WriteLine($"{Tag} scanning file at: file.AbsolutePath={file.AbsolutePath}");
                         ScanDownload(file.AbsolutePath);
@@ -252,7 +252,8 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
                     // clear views
                     await ((MainPage)Shell.Current.CurrentPage).ClearTextfield();
                     await ((MainPage)Shell.Current.CurrentPage).ShowEmptyUI();
-                    await Task.Delay(400);
+                    await Task.Delay(333);
+
                     // finish activity
                     Platform.CurrentActivity.FinishAfterTransition();
                 });
@@ -635,7 +636,7 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
                     string purchaseProductId = purchase.Products[0];
                     Log.Info(Tag, "found purchase product id: " + purchaseProductId);
 
-                    if (purchaseProductId == "spotiflyer_gold_one")
+                    if (purchaseProductId == "insave_gold")
                     {
                         if (!purchase.IsAcknowledged)
                         {
@@ -662,7 +663,7 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
                             .SetProductList(
                                     ImmutableList.Create(
                                             QueryProductDetailsParams.Product.NewBuilder()
-                                                    .SetProductId("spotiflyer_gold_one")
+                                                    .SetProductId("insave_gold")
                                                     .SetProductType(BillingClient.ProductType.Subs)
                                                     .Build()))
                             .Build();
@@ -675,7 +676,8 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
             {
                 Console.WriteLine("query products result is not null");
 
-                ImmutableList<BillingFlowParams.ProductDetailsParams> yProductDetailsParamsList =
+                /*
+                 * ImmutableList<BillingFlowParams.ProductDetailsParams> yProductDetailsParamsList =
                         ImmutableList.Create(
                                 BillingFlowParams.ProductDetailsParams.NewBuilder()
                                         // retrieve a value for "productDetails" by calling queryProductDetailsAsync()
@@ -690,6 +692,7 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
                                         .Build()
                         );
                 Console.WriteLine($"size of yProductDetailsParamsList: {yProductDetailsParamsList.Count}");
+                 */
 
                 ImmutableList<BillingFlowParams.ProductDetailsParams> mProductDetailsParamsList =
                         ImmutableList.Create(
@@ -701,7 +704,7 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
                                         // ProductDetails.subscriptionOfferDetails() for a list of offers
                                         // that are available to the user.
                                         .SetOfferToken(result.ProductDetails[0]
-                                        .GetSubscriptionOfferDetails()[1]
+                                        .GetSubscriptionOfferDetails()[0]
                                         .OfferToken)
                                         .Build()
                         );
@@ -711,9 +714,9 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
                 MainActivity.ActivityCurrent.MBillingFlowParams = BillingFlowParams.NewBuilder()
                         .SetProductDetailsParamsList(mProductDetailsParamsList)
                         .Build();
-                MainActivity.ActivityCurrent.YBillingFlowParams = BillingFlowParams.NewBuilder()
-                        .SetProductDetailsParamsList(yProductDetailsParamsList)
-                        .Build();
+                //MainActivity.ActivityCurrent.YBillingFlowParams = BillingFlowParams.NewBuilder()
+                //        .SetProductDetailsParamsList(yProductDetailsParamsList)
+                //        .Build();
 
                 return result.ProductDetails[0];
             }
@@ -820,7 +823,7 @@ public class MainActivity : MauiAppCompatActivity, IPurchasesUpdatedListener
                 string purchaseProductId = purchase.Products[0];
                 Log.Info(Tag, "found purchase product id: " + purchaseProductId);
 
-                if (purchaseProductId == "spotiflyer_gold_one")
+                if (purchaseProductId == "insave_gold")
                 {
                     if (purchase.PurchaseState != PurchaseState.Purchased)
                     {
