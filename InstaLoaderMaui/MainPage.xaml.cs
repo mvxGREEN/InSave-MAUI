@@ -20,6 +20,29 @@ namespace InstaLoaderMaui
 
         public Microsoft.Maui.Controls.WebView pwv;
 
+        public static readonly string AdmobIdApp = "ca-app-pub-7417392682402637~6569990152";
+        public static readonly string AdmobIdInterTest = "ca-app-pub-3940256099942544/1033173712";
+        public static readonly string AdmobIdInterReal = "ca-app-pub-7417392682402637/9248124383";
+        public static readonly string AdmobIdBannerTest = "ca-app-pub-3940256099942544/9214589741";
+        public static readonly string AdmobIdBannerReal = "ca-app-pub-7417392682402637/5503771756";
+
+        public static string admobIdInter = AdmobIdInterTest;
+        public string mAdmobIdBanner = AdmobIdBannerTest;
+        public string MAdmobIdBanner
+        {
+            get { return mAdmobIdBanner; }
+            set
+            {
+                if (value == mAdmobIdBanner)
+                {
+                    return;
+                }
+
+                mAdmobIdBanner = value;
+                OnPropertyChanged(nameof(MAdmobIdBanner));
+            }
+        }
+
         private uint ANIM_LENGTH = 333;
         private readonly string INPUT_REGEX = "^$|(?:instagram\\.com\\/)";
         public static readonly string UA_DESKTOP_CHROME = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
@@ -240,6 +263,8 @@ namespace InstaLoaderMaui
 
             // init firebase
             FirebaseApp.InitializeApp(MainActivity.ActivityCurrent);
+
+            MainActivity.ActivityCurrent.LoadAdmob();
 
             // check for shared intent
             MainActivity.ActivityCurrent.CheckForIntent();

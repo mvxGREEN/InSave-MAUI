@@ -27,13 +27,13 @@
 		<ApplicationId>green.mobileapps.downloader4inflact</ApplicationId>
 
 		<!-- Versions -->
-		<ApplicationDisplayVersion>3.2.2</ApplicationDisplayVersion>
-		<ApplicationVersion>6</ApplicationVersion>
+		<ApplicationDisplayVersion>4.3.1</ApplicationDisplayVersion>
+		<ApplicationVersion>7</ApplicationVersion>
 
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
 		<RuntimeIdentifiers Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">android-arm;android-arm64;android-x86;android-x64</RuntimeIdentifiers>
 
-		<EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
+		<!--<EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>-->
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -74,6 +74,7 @@
 		<PackageReference Include="Xamarin.Firebase.Analytics" Version="122.4.0" />
 		<PackageReference Include="Xamarin.Google.UserMessagingPlatform" Version="3.2.0.2" />
 		<PackageReference Include="Xamarin.Android.Google.BillingClient" Version="7.1.1.4" />
+		<PackageReference Include="Plugin.MauiMTAdmob" Version="2.0.2" />
 	</ItemGroup>
 
 </Project>

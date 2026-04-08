@@ -4,6 +4,7 @@
              xmlns:material="http://schemas.enisn-projects.io/dotnet/maui/uraniumui/material"
              xmlns:fa="clr-namespace:UraniumUI.Icons.FontAwesome;assembly=UraniumUI.Icons.FontAwesome"
              xmlns:input="clr-namespace:InputKit.Shared.Controls;assembly=InputKit.Maui"
+             xmlns:controls="clr-namespace:Plugin.MauiMTAdmob.Controls;assembly=Plugin.MauiMTAdmob"
              xmlns:validation="clr-namespace:InputKit.Shared.Validations;assembly=InputKit.Maui"
              xmlns:pr="clr-namespace:MPowerKit.ProgressRing;assembly=MPowerKit.ProgressRing"
              x:Class="InstaLoaderMaui.MainPage">
@@ -206,6 +207,11 @@
                         </StackLayout>
                     </Frame>
                 </AbsoluteLayout>
+
+                <StackLayout x:Name="banner_ad_container" VerticalOptions="End" HorizontalOptions="Center" IsVisible="{Binding MIsNotGold}">
+                    <controls:MTAdView x:Name="banner_ad" AdsId="{Binding MAdmobIdBanner}" AdSize="LargeBanner"/>
+                </StackLayout>
+
             </VerticalStackLayout>
         </ScrollView>
 

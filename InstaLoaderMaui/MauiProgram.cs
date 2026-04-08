@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using UraniumUI;
 using InstaLoaderMaui.Platforms.Android;
+using Plugin.MauiMTAdmob;
+
 
 
 
@@ -22,6 +24,7 @@ public static class MauiProgram
 			.UseMauiApp<App>()
             .UseUraniumUI()
             .UseUraniumUIMaterial()
+            .UseMauiMTAdmob()
             .ConfigureFonts(fonts =>
 			{
 				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
