@@ -12,7 +12,7 @@ Quickly download Instagram posts, photos, videos, stories, reels and more.
 
 ## ✨ Features
 * **Media Downloader**: Download Instagram posts, photos, videos, stories, reels and more directly to your device.
-* * **Share-to-Download**: Download without leaving the Instagram app!  Simply share target media to the InSave app to start downloading.
+* **Share-to-Download**: Download without leaving the Instagram app!  Simply share target media to the InSave app to start downloading.
 * **Cross-Platform Ready Code**: Built using .NET MAUI, meaning the core logic and UI can easily be extended to other platforms like iOS or Windows in the future.
 * **C# Powered**: Written entirely in C#, utilizing the robust .NET ecosystem and standard modern coding practices.
 * **Intuitive UI**: A clean, responsive interface designed for Android devices using MAUI's XAML/C# structures.
