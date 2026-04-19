@@ -6,7 +6,7 @@
 [![Platform: Android](https://img.shields.io/badge/Platform-Android-3DDC84.svg)](https://developer.android.com/)
 [![Framework: .NET](https://img.shields.io/badge/Framework-.NET-512BD4.svg)](https://dotnet.microsoft.com/)
 
-**InSave** is an Instagram downloader app built with the .NET MAUI framework for Android.  
+**InSave** is an Instagram downloader app for Android, built with the .NET MAUI framework.  
 
 Quickly download Instagram posts, photos, videos, stories, reels and more.
 
